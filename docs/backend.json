@@ -1,0 +1,64 @@
+
+{
+  "entities": {
+    "Appointment": {
+      "title": "Appointment",
+      "description": "A scheduled service for a client.",
+      "type": "object",
+      "properties": {
+        "clientName": { "type": "string" },
+        "serviceName": { "type": "string" },
+        "barberName": { "type": "string" },
+        "date": { "type": "string", "description": "ISO format date YYYY-MM-DD" },
+        "time": { "type": "string", "description": "Time in HH:mm format" },
+        "status": { "type": "string", "enum": ["confirmed", "ongoing", "cancelled", "completed"] },
+        "clientImage": { "type": "string" }
+      },
+      "required": ["clientName", "serviceName", "barberName", "date", "time", "status"]
+    },
+    "Barber": {
+      "title": "Barber",
+      "description": "A barber working at the shop.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "specialty": { "type": "string" },
+        "image": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "inactive"] },
+        "schedule": { "type": "string" },
+        "break": { "type": "string" }
+      },
+      "required": ["name", "status"]
+    },
+    "Service": {
+      "title": "Service",
+      "description": "A service offered by the barbershop.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "duration": { "type": "number" },
+        "price": { "type": "number" },
+        "image": { "type": "string" }
+      },
+      "required": ["name", "price", "duration"]
+    }
+  },
+  "auth": {
+    "providers": ["google.com", "password"]
+  },
+  "firestore": {
+    "/appointments/{appointmentId}": {
+      "schema": "Appointment",
+      "description": "Collection of client appointments."
+    },
+    "/barbers/{barberId}": {
+      "schema": "Barber",
+      "description": "Collection of barbers."
+    },
+    "/services/{serviceId}": {
+      "schema": "Service",
+      "description": "Collection of services."
+    }
+  }
+}
