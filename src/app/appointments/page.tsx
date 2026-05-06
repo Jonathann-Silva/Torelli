@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Calendar, Clock, MapPin, MoreHorizontal } from 'lucide-react';
+import { Calendar, Clock, Scissors, MoreHorizontal } from 'lucide-react';
 import { APPOINTMENTS } from '@/lib/mock-data';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -26,7 +26,7 @@ export default function AppointmentsPage() {
           <button className="pb-4 border-b-2 border-transparent text-muted-foreground text-sm font-black uppercase tracking-widest hover:text-foreground transition-colors">Histórico</button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6">
           {APPOINTMENTS.map((apt) => {
             const barberImg = PlaceHolderImages.find(img => img.id === 'barber' + (apt.barberName.includes('Marcos') ? '3' : '1'));
             return (
@@ -84,9 +84,9 @@ export default function AppointmentsPage() {
             );
           })}
 
-          <div className="lg:col-span-2 mt-8 relative overflow-hidden bg-primary p-8 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6 group">
-            <div className="relative z-10 space-y-4 text-center md:text-left">
-              <h4 className="text-3xl font-black text-primary-foreground leading-tight tracking-tight">Mantenha seu visual<br className="hidden md:block"/>sempre impecável.</h4>
+          <div className="mt-8 relative overflow-hidden bg-primary p-8 rounded-3xl flex flex-col items-center justify-between gap-6 group">
+            <div className="relative z-10 space-y-4 text-center">
+              <h4 className="text-3xl font-black text-primary-foreground leading-tight tracking-tight">Mantenha seu visual impecável.</h4>
               <p className="text-primary-foreground/80 font-medium text-sm">Assine nosso plano mensal e tenha prioridade na agenda.</p>
               <Button className="bg-primary-foreground text-primary px-8 h-12 rounded-xl font-black uppercase tracking-widest shadow-xl">Saber Mais</Button>
             </div>
