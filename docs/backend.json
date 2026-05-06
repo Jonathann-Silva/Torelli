@@ -12,7 +12,8 @@
         "date": { "type": "string", "description": "ISO format date YYYY-MM-DD" },
         "time": { "type": "string", "description": "Time in HH:mm format" },
         "status": { "type": "string", "enum": ["confirmed", "ongoing", "cancelled", "completed"] },
-        "clientImage": { "type": "string" }
+        "clientImage": { "type": "string" },
+        "price": { "type": "number" }
       },
       "required": ["clientName", "serviceName", "barberName", "date", "time", "status"]
     },
@@ -42,6 +43,19 @@
         "image": { "type": "string" }
       },
       "required": ["name", "price", "duration"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "System notifications for users or admins.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "read": { "type": "boolean" },
+        "type": { "type": "string", "enum": ["info", "success", "alert"] }
+      },
+      "required": ["title", "message", "createdAt", "read"]
     }
   },
   "auth": {
@@ -59,6 +73,10 @@
     "/services/{serviceId}": {
       "schema": "Service",
       "description": "Collection of services."
+    },
+    "/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "Collection of system notifications."
     }
   }
 }
