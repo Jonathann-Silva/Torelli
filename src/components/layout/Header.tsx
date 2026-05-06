@@ -2,9 +2,10 @@
 "use client"
 
 import React, { useMemo } from 'react';
-import { Menu, Bell, CheckCheck, Info } from 'lucide-react';
+import { Menu, Bell, CheckCheck, Info, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy, limit, doc, updateDoc } from 'firebase/firestore';
@@ -21,6 +22,8 @@ import { ptBR } from 'date-fns/locale';
 
 export const Header = () => {
   const db = useFirestore();
+  const pathname = usePathname();
+  const isAdmin = pathname.startsWith('/admin');
   const managerImg = PlaceHolderImages.find(img => img.id === 'manager');
 
   const notificationsQuery = useMemo(() => {
@@ -44,12 +47,20 @@ export const Header = () => {
   return (
     <header className="flex justify-between items-center px-4 h-16 w-full z-50 fixed top-0 left-0 right-0 max-w-[480px] mx-auto bg-background/80 backdrop-blur-md border-b border-white/5">
       <div className="flex items-center gap-3">
-        <button className="p-2 text-primary hover:bg-white/5 rounded-lg transition-colors">
-          <Menu size={22} />
-        </button>
-        <Link href="/">
-          <h1 className="font-headline text-xl font-extrabold tracking-tighter text-primary leading-none">ELITE BLADE</h1>
-        </Link>
+        {isAdmin ? (
+          <div className="flex items-center gap-2">
+            <div className="bg-primary/20 p-1.5 rounded-lg text-primary">
+              <ShieldCheck size={18} />
+            </div>
+            <Link href="/admin">
+              <h1 className="font-headline text-lg font-black tracking-tighter text-white leading-none">ADMIN <span className="text-primary">EB</span></h1>
+            </Link>
+          </div>
+        ) : (
+          <Link href="/">
+            <h1 className="font-headline text-xl font-extrabold tracking-tighter text-primary leading-none">ELITE BLADE</h1>
+          </Link>
+        )}
       </div>
       
       <div className="flex items-center gap-3">
@@ -75,7 +86,7 @@ export const Header = () => {
                   notifications.map((n: any) => (
                     <div 
                       key={n.id} 
-                      className={`p-4 rounded-2xl border transition-all ${
+                      className={`p-4 rounded-2xl border transition-all cursor-pointer ${
                         n.read ? 'bg-secondary/10 border-white/5 opacity-60' : 'bg-primary/5 border-primary/20 shadow-lg shadow-primary/5'
                       }`}
                       onClick={() => handleMarkAsRead(n.id)}
@@ -88,7 +99,7 @@ export const Header = () => {
                           <h4 className="text-xs font-black text-foreground uppercase tracking-widest truncate">{n.title}</h4>
                           <p className="text-[10px] text-muted-foreground leading-relaxed line-clamp-2">{n.message}</p>
                           <p className="text-[8px] font-bold text-primary/60 uppercase tracking-tighter pt-1">
-                            {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true, locale: ptBR })}
+                            {n.createdAt ? formatDistanceToNow(new Date(n.createdAt), { addSuffix: true, locale: ptBR }) : 'Agora'}
                           </p>
                         </div>
                       </div>
@@ -97,7 +108,7 @@ export const Header = () => {
                 ) : (
                   <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 opacity-30">
                     <Bell size={48} className="text-muted-foreground" />
-                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nenhuma notificação por aqui</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nenhuma notificação</p>
                   </div>
                 )}
               </div>
