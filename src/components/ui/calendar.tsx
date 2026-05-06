@@ -32,25 +32,25 @@ function Calendar({
         ),
         nav_button_previous: "absolute left-1",
         nav_button_next: "absolute right-1",
-        table: "w-full border-collapse space-y-1",
-        head_row: "flex w-full justify-center",
-        head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem] text-center capitalize flex items-center justify-center shrink-0",
-        row: "flex w-full mt-2 justify-center",
-        cell: "h-9 w-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20 flex items-center justify-center shrink-0",
-        day: cn(
+        month_grid: "w-full border-collapse",
+        weekdays: "flex w-full",
+        weekday: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem] text-center capitalize flex-1",
+        week: "flex w-full mt-2",
+        day: "h-9 w-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20 flex-1 flex items-center justify-center",
+        day_button: cn(
           buttonVariants({ variant: "ghost" }),
-          "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-primary/20 hover:text-primary transition-colors flex items-center justify-center"
+          "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-primary/20 hover:text-primary transition-colors"
         ),
-        day_range_end: "day-range-end",
-        day_selected:
+        range_end: "day-range-end",
+        selected:
           "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground shadow-lg shadow-primary/20",
-        day_today: "bg-secondary text-primary font-bold border border-primary/20",
-        day_outside:
+        today: "bg-secondary text-primary font-bold border border-primary/20",
+        outside:
           "day-outside text-muted-foreground/30 aria-selected:bg-accent/50 aria-selected:text-muted-foreground",
-        day_disabled: "text-muted-foreground opacity-50",
-        day_range_middle:
+        disabled: "text-muted-foreground opacity-50",
+        range_middle:
           "aria-selected:bg-accent aria-selected:text-accent-foreground",
-        day_hidden: "invisible",
+        hidden: "invisible",
         ...classNames,
       }}
       components={{
