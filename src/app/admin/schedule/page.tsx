@@ -3,8 +3,9 @@
 import React from 'react';
 import Image from 'next/image';
 import { Header } from '@/components/layout/Header';
+import { BottomNav } from '@/components/layout/BottomNav';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Filter, Calendar, ChevronDown, User, Blockquote, Plus, TrendingUp, DollarSign, Users } from 'lucide-react';
+import { Filter, Calendar, ChevronDown, User, Plus, TrendingUp, DollarSign, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function ScheduleAdminPage() {

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { Header } from '@/components/layout/Header';
+import { BottomNav } from '@/components/layout/BottomNav';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Plus, Edit3, Trash2, Clock, DollarSign, Sparkles, Loader2 } from 'lucide-react';
 import { SERVICES } from '@/lib/mock-data';
@@ -42,7 +43,7 @@ export default function ServicesAdminPage() {
     <div className="min-h-screen">
       <Header />
       
-      <main className="pt-24 pb-12 px-4 md:px-margin max-w-container-max mx-auto space-y-12">
+      <main className="pt-24 pb-32 px-4 md:px-margin max-w-container-max mx-auto space-y-12">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="space-y-1">
             <h2 className="text-4xl font-black text-white tracking-tighter">Gestão de Serviços</h2>
@@ -140,6 +141,8 @@ export default function ServicesAdminPage() {
           </div>
         </div>
       </main>
+
+      <BottomNav />
     </div>
   );
 }

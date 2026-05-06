@@ -3,18 +3,18 @@
 import React from 'react';
 import Image from 'next/image';
 import { Header } from '@/components/layout/Header';
+import { BottomNav } from '@/components/layout/BottomNav';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { UserPlus, Edit3, Settings, Coffee, Scissors, Calendar } from 'lucide-react';
+import { UserPlus, Edit3, Settings, Coffee, Scissors, Calendar, Sparkles } from 'lucide-react';
 import { BARBERS } from '@/lib/mock-data';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 
 export default function BarbersAdminPage() {
   return (
     <div className="min-h-screen">
       <Header />
       
-      <main className="pt-24 pb-12 px-4 md:px-margin max-w-container-max mx-auto space-y-12">
+      <main className="pt-24 pb-32 px-4 md:px-margin max-w-container-max mx-auto space-y-12">
         <header className="flex flex-col md:flex-row justify-between items-end gap-6">
           <div className="space-y-1">
             <h2 className="text-4xl font-black text-white tracking-tighter">Gestão de Barbeiros</h2>
@@ -136,6 +136,8 @@ export default function BarbersAdminPage() {
           </div>
         </section>
       </main>
+
+      <BottomNav />
     </div>
   );
 }
