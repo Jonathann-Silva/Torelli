@@ -111,21 +111,21 @@ export default function ScheduleAdminPage() {
           <div className="premium-card p-8 rounded-3xl flex flex-col justify-between h-40">
             <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Ocupação Hoje</p>
             <div className="flex items-end justify-between mt-4">
-              <span className="text-5xl font-black text-primary">85%</span>
+              <span className="text-3xl font-black text-primary">85%</span>
               <TrendingUp className="text-primary mb-2" size={24} />
             </div>
           </div>
           <div className="premium-card p-8 rounded-3xl flex flex-col justify-between h-40">
             <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Novos Clientes</p>
             <div className="flex items-end justify-between mt-4">
-              <span className="text-5xl font-black text-white">12</span>
+              <span className="text-3xl font-black text-white">12</span>
               <Users className="text-muted-foreground mb-2" size={24} />
             </div>
           </div>
           <div className="bg-primary p-8 rounded-3xl flex flex-col justify-between h-40 shadow-xl shadow-primary/20">
             <p className="text-[10px] font-black text-primary-foreground uppercase tracking-[0.2em]">Faturamento Estimado</p>
             <div className="flex items-end justify-between mt-4">
-              <span className="text-4xl font-black text-primary-foreground">R$ 2.450</span>
+              <span className="text-3xl font-black text-primary-foreground">R$ 2.450</span>
               <DollarSign className="text-primary-foreground mb-2" size={24} />
             </div>
           </div>
