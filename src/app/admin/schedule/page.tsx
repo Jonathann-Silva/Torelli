@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useMemo } from 'react';
@@ -33,8 +32,10 @@ export default function ScheduleAdminPage() {
   const { data: appointments = [], loading } = useCollection(appointmentsQuery);
 
   const getAppointmentsForHour = (hour: string) => {
-    return appointments.filter(apt => apt.time === hour);
+    return appointments.filter((apt: any) => apt.time === hour);
   };
+
+  const totalRevenue = appointments.reduce((acc: number, curr: any) => acc + (curr.price || 85), 0);
 
   return (
     <div className="min-h-screen">
@@ -128,36 +129,29 @@ export default function ScheduleAdminPage() {
           </div>
         </section>
 
-        {/* Floating Actions */}
-        <div className="fixed bottom-24 right-4 z-50 flex flex-col items-end gap-4">
-          <Button className="h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-2xl shadow-primary/30 hover:brightness-110 active:scale-95 transition-all">
-            <Plus size={24} />
-          </Button>
-        </div>
-
         {/* Stats Section */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="premium-card p-6 rounded-3xl flex flex-col justify-between h-36">
+          <div className="premium-card p-5 rounded-3xl flex flex-col justify-between h-32">
             <p className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em]">Ocupação Hoje</p>
-            <div className="flex items-end justify-between mt-2">
+            <div className="flex items-end justify-between">
               <span className="text-2xl font-black text-primary">
-                {Math.round((appointments.length / hours.length) * 100)}%
+                {hours.length > 0 ? Math.round((appointments.length / hours.length) * 100) : 0}%
               </span>
-              <TrendingUp className="text-primary mb-1" size={20} />
+              <TrendingUp className="text-primary" size={18} />
             </div>
           </div>
-          <div className="premium-card p-6 rounded-3xl flex flex-col justify-between h-36">
+          <div className="premium-card p-5 rounded-3xl flex flex-col justify-between h-32">
             <p className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em]">Agendamentos</p>
-            <div className="flex items-end justify-between mt-2">
+            <div className="flex items-end justify-between">
               <span className="text-2xl font-black text-white">{appointments.length}</span>
-              <Users className="text-muted-foreground mb-1" size={20} />
+              <Users className="text-muted-foreground" size={18} />
             </div>
           </div>
-          <div className="bg-primary p-6 rounded-3xl flex flex-col justify-between h-36 shadow-xl shadow-primary/20">
-            <p className="text-[9px] font-black text-primary-foreground uppercase tracking-[0.2em]">Faturamento Estimado</p>
-            <div className="flex items-end justify-between mt-2">
-              <span className="text-2xl font-black text-primary-foreground">R$ {appointments.length * 85}</span>
-              <DollarSign className="text-primary-foreground mb-1" size={20} />
+          <div className="bg-primary p-5 rounded-3xl flex flex-col justify-between h-32 shadow-xl shadow-primary/20">
+            <p className="text-[9px] font-black text-primary-foreground uppercase tracking-[0.2em]">Faturamento</p>
+            <div className="flex items-end justify-between">
+              <span className="text-2xl font-black text-primary-foreground">R$ {totalRevenue}</span>
+              <DollarSign className="text-primary-foreground" size={18} />
             </div>
           </div>
         </section>
