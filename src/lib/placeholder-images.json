@@ -1,3 +1,64 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "manager",
+      "description": "Professional male manager portrait",
+      "imageUrl": "https://picsum.photos/seed/elite-manager/200/200",
+      "imageHint": "professional manager"
+    },
+    {
+      "id": "barber1",
+      "description": "Ricardo Silva barber portrait",
+      "imageUrl": "https://picsum.photos/seed/barber-ricardo/400/400",
+      "imageHint": "professional barber"
+    },
+    {
+      "id": "barber2",
+      "description": "Arthur Fontes barber portrait",
+      "imageUrl": "https://picsum.photos/seed/barber-arthur/400/400",
+      "imageHint": "modern barber"
+    },
+    {
+      "id": "barber3",
+      "description": "Marco Aurélio barber portrait",
+      "imageUrl": "https://picsum.photos/seed/barber-marco/400/400",
+      "imageHint": "classic barber"
+    },
+    {
+      "id": "client1",
+      "description": "Client portrait headshot",
+      "imageUrl": "https://picsum.photos/seed/client-1/200/200",
+      "imageHint": "stylish man"
+    },
+    {
+      "id": "client2",
+      "description": "Client portrait headshot",
+      "imageUrl": "https://picsum.photos/seed/client-2/200/200",
+      "imageHint": "modern gentleman"
+    },
+    {
+      "id": "service-razor",
+      "description": "Straight razor close up",
+      "imageUrl": "https://picsum.photos/seed/service-razor/800/600",
+      "imageHint": "barber razor"
+    },
+    {
+      "id": "service-cut",
+      "description": "Modern fade haircut",
+      "imageUrl": "https://picsum.photos/seed/service-cut/800/600",
+      "imageHint": "fade haircut"
+    },
+    {
+      "id": "service-beard",
+      "description": "Hot towel shave",
+      "imageUrl": "https://picsum.photos/seed/service-beard/800/600",
+      "imageHint": "shave treatment"
+    },
+    {
+      "id": "hero-promo",
+      "description": "Barber shop interior cinematic",
+      "imageUrl": "https://picsum.photos/seed/hero-promo/1200/600",
+      "imageHint": "luxury barbershop"
+    }
+  ]
 }
