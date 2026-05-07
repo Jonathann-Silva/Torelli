@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI agent that suggests engaging marketing copy and campaign ideas.
@@ -51,7 +52,7 @@ const prompt = ai.definePrompt({
   name: 'generateMarketingContentPrompt',
   input: {schema: GenerateMarketingContentInputSchema},
   output: {schema: GenerateMarketingContentOutputSchema},
-  prompt: `You are an expert marketing content creator for "ELITE BLADE", a luxury barbershop. Your goal is to generate engaging marketing copy and creative campaign ideas that attract and retain high-value clients.
+  prompt: `You are an expert marketing content creator for "Torelli Agendamentos", a luxury barbershop. Your goal is to generate engaging marketing copy and creative campaign ideas that attract and retain high-value clients.
 
 The content type is: {{{contentType}}}
 Name: {{{name}}}
@@ -65,7 +66,7 @@ Target Audience: {{{targetAudience}}}
 Desired Call to Action: {{{callToAction}}}
 {{/if}}
 
-Generate compelling marketing copy and at least 3 creative campaign ideas for the above. Focus on luxury, exclusivity, and the premium experience of Elite Blade. Format the output strictly as JSON, with 'copy' as a string and 'campaignIdeas' as an array of strings.
+Generate compelling marketing copy and at least 3 creative campaign ideas for the above. Focus on luxury, exclusivity, and the premium experience of Torelli Agendamentos. Format the output strictly as JSON, with 'copy' as a string and 'campaignIdeas' as an array of strings.
 `,
 });
 

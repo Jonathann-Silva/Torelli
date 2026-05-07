@@ -1,3 +1,4 @@
+
 "use client"
 
 import React from 'react';
@@ -19,8 +20,8 @@ export default function LoginPage() {
             </div>
           </div>
           <div className="space-y-1">
-            <h1 className="text-5xl font-black tracking-tighter text-primary">ELITE BLADE</h1>
-            <p className="text-[10px] font-bold tracking-[0.4em] uppercase text-muted-foreground">The Modern Heritage</p>
+            <h1 className="text-4xl font-black tracking-tighter text-primary">Torelli Agendamentos</h1>
+            <p className="text-[10px] font-bold tracking-[0.4em] uppercase text-muted-foreground">Premium Grooming Experience</p>
           </div>
         </header>
 

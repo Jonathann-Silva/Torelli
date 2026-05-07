@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A Genkit flow for generating appealing descriptions for salon services.
@@ -31,7 +32,7 @@ const generateServiceDescriptionPrompt = ai.definePrompt({
   name: 'generateServiceDescriptionPrompt',
   input: { schema: GenerateServiceDescriptionInputSchema },
   output: { schema: GenerateServiceDescriptionOutputSchema },
-  prompt: `You are an expert marketing copywriter for a high-end, luxury barbershop named 'ELITE BLADE'. Your goal is to craft a compelling and appealing description for a salon service, designed to attract discerning clients.
+  prompt: `You are an expert marketing copywriter for a high-end, luxury barbershop named 'Torelli Agendamentos'. Your goal is to craft a compelling and appealing description for a salon service, designed to attract discerning clients.
 
 Service Name: "{{{serviceName}}}"
 
@@ -46,7 +47,7 @@ Existing description (use this as inspiration or to enhance): "{{{currentDescrip
 
 Desired length: {{{length}}} (short, medium, or long)
 
-Craft a detailed, enticing description that highlights the premium nature and unique benefits of the "{{{serviceName}}}". Focus on the client experience, the skill of the barber, and the luxurious outcome. The description should be engaging and reflect the high-quality standards of ELITE BLADE.
+Craft a detailed, enticing description that highlights the premium nature and unique benefits of the "{{{serviceName}}}". Focus on the client experience, the skill of the barber, and the luxurious outcome. The description should be engaging and reflect the high-quality standards of Torelli Agendamentos.
 
 Return only the JSON object containing the generated description.`,
 });

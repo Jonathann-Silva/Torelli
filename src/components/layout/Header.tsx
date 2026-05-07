@@ -53,12 +53,12 @@ export const Header = () => {
               <ShieldCheck size={18} />
             </div>
             <Link href="/admin">
-              <h1 className="font-headline text-lg font-black tracking-tighter text-white leading-none">ADMIN <span className="text-primary">EB</span></h1>
+              <h1 className="font-headline text-lg font-black tracking-tighter text-white leading-none">ADMIN <span className="text-primary">TA</span></h1>
             </Link>
           </div>
         ) : (
           <Link href="/">
-            <h1 className="font-headline text-xl font-extrabold tracking-tighter text-primary leading-none">ELITE BLADE</h1>
+            <h1 className="font-headline text-xl font-extrabold tracking-tighter text-primary leading-none">Torelli Agendamentos</h1>
           </Link>
         )}
       </div>

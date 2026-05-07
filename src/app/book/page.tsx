@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState } from 'react';
@@ -22,7 +23,7 @@ export default function BookPage() {
           <Link href="/">
             <X size={24} className="text-muted-foreground hover:text-primary transition-colors cursor-pointer" />
           </Link>
-          <h1 className="font-headline text-2xl font-extrabold tracking-tighter text-primary">ELITE BLADE</h1>
+          <h1 className="font-headline text-xl font-extrabold tracking-tighter text-primary">Torelli Agendamentos</h1>
         </div>
         <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 relative">
           <Image 

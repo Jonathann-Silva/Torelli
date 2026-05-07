@@ -1,11 +1,12 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { FirebaseClientProvider } from '@/firebase';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'Elite Blade | Premium Barbershop',
-  description: 'Luxury grooming experience for the modern gentleman.',
+  title: 'Torelli Agendamentos | Premium Barbershop',
+  description: 'Experiência de cuidado premium para o homem moderno.',
 };
 
 export default function RootLayout({
