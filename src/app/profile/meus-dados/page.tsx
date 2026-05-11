@@ -20,6 +20,21 @@ export default function MeusDadosPage() {
   
   const defaultImage = PlaceHolderImages.find(img => img.id === 'client1')?.imageUrl || '';
   const [profileImage, setProfileImage] = useState(defaultImage);
+  const [phone, setPhone] = useState('11 987654321');
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, ''); // Remove tudo que não é número
+    
+    // Limita a 11 dígitos (padrão brasileiro celular)
+    if (value.length > 11) value = value.substring(0, 11);
+
+    // Aplica o espaço após o DDD (2 primeiros dígitos)
+    if (value.length > 2) {
+      value = value.substring(0, 2) + ' ' + value.substring(2);
+    }
+    
+    setPhone(value);
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -89,6 +104,7 @@ export default function MeusDadosPage() {
             />
             
             <button 
+              type="button"
               onClick={handlePhotoAction}
               className="absolute bottom-0 right-0 bg-primary text-primary-foreground p-2 rounded-full shadow-lg transition-transform active:scale-95 amber-glow"
             >
@@ -131,8 +147,9 @@ export default function MeusDadosPage() {
               <div className="relative">
                 <Input 
                   className="bg-[#1A1A1A] border-white/5 rounded-xl h-14 px-4 focus:ring-primary focus:border-primary transition-all text-white"
-                  placeholder="(00) 00000-0000"
-                  defaultValue="(11) 98765-4321"
+                  placeholder="00 000000000"
+                  value={phone}
+                  onChange={handlePhoneChange}
                 />
                 <Phone className="absolute right-4 top-4 text-muted-foreground/40" size={20} />
               </div>
