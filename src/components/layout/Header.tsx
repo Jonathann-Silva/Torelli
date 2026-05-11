@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useMemo } from 'react';
-import { Menu, Bell, CheckCheck, Info, ShieldCheck } from 'lucide-react';
+import { Bell, CheckCheck, Info, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -10,12 +10,10 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy, limit, doc, updateDoc } from 'firebase/firestore';
 import { 
-  Sheet, 
-  SheetContent, 
-  SheetHeader, 
-  SheetTitle, 
-  SheetTrigger 
-} from '@/components/ui/sheet';
+  Popover, 
+  PopoverContent, 
+  PopoverTrigger 
+} from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -64,57 +62,73 @@ export const Header = () => {
       </div>
       
       <div className="flex items-center gap-3">
-        <Sheet>
-          <SheetTrigger asChild>
-            <button className="p-2 text-muted-foreground hover:text-primary transition-colors relative">
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="p-2 text-muted-foreground hover:text-primary transition-colors relative outline-none">
               <Bell size={20} />
               {unreadCount > 0 && (
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full animate-pulse border border-background shadow-lg shadow-primary/20"></span>
               )}
             </button>
-          </SheetTrigger>
-          <SheetContent side="right" className="w-[300px] bg-card border-white/5 p-0">
-            <SheetHeader className="p-6 border-b border-white/5">
-              <SheetTitle className="text-xl font-black text-white tracking-tight flex items-center justify-between">
-                Notificações
-                {unreadCount > 0 && <span className="text-[10px] bg-primary text-primary-foreground px-2 py-0.5 rounded-full">{unreadCount}</span>}
-              </SheetTitle>
-            </SheetHeader>
-            <ScrollArea className="h-[calc(100vh-80px)]">
-              <div className="p-4 space-y-4">
+          </PopoverTrigger>
+          <PopoverContent 
+            align="end" 
+            sideOffset={8}
+            className="w-[calc(100vw-32px)] max-w-[360px] p-0 bg-card/95 backdrop-blur-xl border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-3xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+          >
+            <div className="p-5 border-b border-white/5 flex items-center justify-between bg-white/5">
+              <h3 className="text-sm font-black text-white uppercase tracking-widest">Notificações</h3>
+              {unreadCount > 0 && (
+                <span className="text-[9px] font-black bg-primary text-primary-foreground px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                  {unreadCount} novas
+                </span>
+              )}
+            </div>
+            
+            <ScrollArea className="max-h-[400px]">
+              <div className="p-3 space-y-2">
                 {notifications.length > 0 ? (
                   notifications.map((n: any) => (
                     <div 
                       key={n.id} 
-                      className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-                        n.read ? 'bg-secondary/10 border-white/5 opacity-60' : 'bg-primary/5 border-primary/20 shadow-lg shadow-primary/5'
+                      className={`p-4 rounded-2xl border transition-all cursor-pointer relative group ${
+                        n.read ? 'bg-secondary/20 border-white/5 opacity-50' : 'bg-primary/5 border-primary/20'
                       }`}
                       onClick={() => handleMarkAsRead(n.id)}
                     >
                       <div className="flex items-start gap-3">
-                        <div className={`mt-1 p-1.5 rounded-lg ${n.read ? 'bg-white/5 text-muted-foreground' : 'bg-primary/20 text-primary'}`}>
+                        <div className={`mt-1 p-2 rounded-xl shrink-0 ${n.read ? 'bg-white/5 text-muted-foreground' : 'bg-primary/20 text-primary'}`}>
                           {n.type === 'alert' ? <Info size={14} /> : <CheckCheck size={14} />}
                         </div>
                         <div className="space-y-1 min-w-0">
-                          <h4 className="text-xs font-black text-foreground uppercase tracking-widest truncate">{n.title}</h4>
+                          <h4 className="text-[10px] font-black text-foreground uppercase tracking-widest truncate">{n.title}</h4>
                           <p className="text-[10px] text-muted-foreground leading-relaxed line-clamp-2">{n.message}</p>
                           <p className="text-[8px] font-bold text-primary/60 uppercase tracking-tighter pt-1">
                             {n.createdAt ? formatDistanceToNow(new Date(n.createdAt), { addSuffix: true, locale: ptBR }) : 'Agora'}
                           </p>
                         </div>
                       </div>
+                      {!n.read && (
+                        <div className="absolute top-4 right-4 w-1.5 h-1.5 bg-primary rounded-full"></div>
+                      )}
                     </div>
                   ))
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 opacity-30">
-                    <Bell size={48} className="text-muted-foreground" />
-                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nenhuma notificação</p>
+                  <div className="flex flex-col items-center justify-center py-12 text-center space-y-3 opacity-30">
+                    <Bell size={32} className="text-muted-foreground" />
+                    <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Tudo limpo por aqui</p>
                   </div>
                 )}
               </div>
             </ScrollArea>
-          </SheetContent>
-        </Sheet>
+            
+            <div className="p-3 bg-white/5 border-t border-white/5">
+              <button className="w-full py-2 text-[9px] font-black text-primary uppercase tracking-[0.2em] hover:bg-primary/5 rounded-xl transition-colors">
+                Marcar todas como lidas
+              </button>
+            </div>
+          </PopoverContent>
+        </Popover>
         
         <div className="w-8 h-8 rounded-full bg-secondary border border-white/10 overflow-hidden relative">
           {managerImg && (
