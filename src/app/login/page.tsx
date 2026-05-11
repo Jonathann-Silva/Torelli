@@ -2,95 +2,136 @@
 "use client"
 
 import React from 'react';
-import Link from 'next/link';
-import { Mail, Lock, Eye, Scissors } from 'lucide-react';
+import Image from 'next/image';
+import { Header } from '@/components/layout/Header';
+import { BottomNav } from '@/components/layout/BottomNav';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { 
+  ShieldCheck, 
+  Scissors, 
+  Gift, 
+  Star, 
+  User, 
+  UserCog, 
+  Bell, 
+  Shield, 
+  HelpCircle, 
+  LogOut, 
+  ChevronRight 
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useUser } from '@/firebase';
 
-export default function LoginPage() {
+export default function ProfilePage() {
+  const { user } = useUser();
+  const profileImg = PlaceHolderImages.find(img => img.id === 'client1');
+  
+  // Usamos os dados do usuário logado se disponíveis, caso contrário, o mock solicitado
+  const displayName = user?.displayName || "Gabriel Martins";
+  const memberSince = "Nov 2023";
+
   return (
-    <div className="min-h-screen relative flex flex-col items-center justify-center p-4">
-      {/* Decorative Overlays */}
-      <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-10"></div>
-      <div className="absolute inset-0 bg-gradient-to-b from-background via-background/95 to-background"></div>
+    <div className="min-h-screen">
+      <Header />
 
-      <main className="relative z-10 w-full max-w-md space-y-12">
-        <header className="text-center space-y-4">
-          <div className="flex justify-center">
-            <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center border border-primary/30 amber-glow">
-              <Scissors size={32} className="text-primary" />
+      <main className="mt-20 px-5 max-w-[480px] mx-auto space-y-8 pb-32">
+        {/* Profile Header Section */}
+        <section className="flex flex-col items-center text-center pt-4">
+          <div className="relative mb-4">
+            <div className="w-24 h-24 rounded-full border-2 border-primary p-1 bg-secondary">
+              {profileImg && (
+                <Image 
+                  src={profileImg.imageUrl} 
+                  alt={displayName} 
+                  width={96}
+                  height={96}
+                  className="w-full h-full rounded-full object-cover"
+                />
+              )}
+            </div>
+            <div className="absolute -bottom-2 right-0 bg-primary text-primary-foreground px-3 py-1 rounded-full text-[10px] font-black tracking-widest flex items-center gap-1 shadow-lg amber-glow">
+              <ShieldCheck size={12} className="fill-current" />
+              ELITE
             </div>
           </div>
-          <div className="space-y-1">
-            <h1 className="text-4xl font-black tracking-tighter text-primary">Torelli Agendamentos</h1>
-            <p className="text-[10px] font-bold tracking-[0.4em] uppercase text-muted-foreground">Premium Grooming Experience</p>
+          <h2 className="text-2xl font-black text-white tracking-tight">{displayName}</h2>
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mt-1">Membro desde {memberSince}</p>
+        </section>
+
+        {/* Digital Loyalty Card Section */}
+        <section className="bg-secondary/40 border border-white/5 rounded-3xl p-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-primary/5 rounded-full blur-3xl"></div>
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h3 className="text-[10px] font-black text-primary tracking-[0.3em] uppercase">Cartão Fidelidade</h3>
+              <p className="text-muted-foreground text-[10px] font-medium">Complete 10 e ganhe um corte</p>
+            </div>
+            <span className="text-2xl font-black text-primary">8/10</span>
           </div>
-        </header>
-
-        <div className="bg-card/50 backdrop-blur-xl p-8 rounded-3xl border border-white/5 space-y-8">
-          <form className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">E-mail</label>
-              <div className="relative group">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={20} />
-                <input 
-                  type="email" 
-                  placeholder="seu@email.com"
-                  className="w-full bg-secondary/50 border border-white/5 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-primary/50 transition-all text-sm"
-                />
+          
+          <div className="grid grid-cols-5 gap-3 mb-2">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="h-10 bg-primary rounded-xl flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/10">
+                <Scissors size={16} />
               </div>
+            ))}
+            <div className="h-10 border border-white/5 bg-secondary/30 rounded-xl"></div>
+            <div className="h-10 border border-primary/20 bg-primary/5 rounded-xl flex items-center justify-center text-primary/40">
+              <Gift size={16} />
             </div>
+          </div>
+        </section>
 
-            <div className="space-y-2">
-              <div className="flex justify-between items-center px-1">
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Senha</label>
-                <Link href="#" className="text-[10px] font-bold text-primary/60 hover:text-primary transition-colors">Esqueci minha senha</Link>
-              </div>
-              <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={20} />
-                <input 
-                  type="password" 
-                  placeholder="••••••••"
-                  className="w-full bg-secondary/50 border border-white/5 rounded-2xl py-4 pl-12 pr-12 outline-none focus:border-primary/50 transition-all text-sm"
-                />
-                <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
-                  <Eye size={20} />
-                </button>
-              </div>
-            </div>
+        {/* Quick Stats Grid */}
+        <section className="grid grid-cols-3 gap-3">
+          <div className="bg-secondary/20 border border-white/5 p-4 rounded-2xl flex flex-col items-center">
+            <span className="text-xl font-black text-white">12</span>
+            <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest mt-1">Visitas</span>
+          </div>
+          <div className="bg-secondary/20 border border-white/5 p-4 rounded-2xl flex flex-col items-center text-center">
+            <Star size={16} className="text-primary mb-1 fill-primary" />
+            <span className="text-[8px] font-black text-white uppercase leading-none">Corte Executive</span>
+          </div>
+          <div className="bg-secondary/20 border border-white/5 p-4 rounded-2xl flex flex-col items-center text-center">
+            <User size={16} className="text-primary mb-1" />
+            <span className="text-[8px] font-black text-white uppercase leading-none">Ricardo Silva</span>
+          </div>
+        </section>
 
-            <button 
-              type="submit"
-              className="w-full bg-primary text-primary-foreground py-4 rounded-2xl font-black uppercase tracking-widest amber-glow hover:brightness-110 active:scale-[0.98] transition-all"
-            >
-              Entrar
+        {/* Menu List Section */}
+        <section className="space-y-2">
+          {[
+            { label: 'Meus Dados', icon: UserCog },
+            { label: 'Notificações', icon: Bell, badge: true },
+            { label: 'Segurança', icon: Shield },
+            { label: 'Ajuda', icon: HelpCircle }
+          ].map((item, i) => (
+            <button key={i} className="w-full flex items-center justify-between p-4 bg-secondary/20 rounded-2xl hover:bg-secondary/40 transition-all group">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-secondary/60 flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
+                  <item.icon size={20} />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-foreground">{item.label}</span>
+                  {item.badge && <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>}
+                </div>
+              </div>
+              <ChevronRight size={18} className="text-muted-foreground" />
             </button>
-          </form>
+          ))}
+        </section>
 
-          <div className="relative flex items-center py-4">
-            <div className="flex-grow border-t border-white/5"></div>
-            <span className="mx-4 text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Ou acesse com</span>
-            <div className="flex-grow border-t border-white/5"></div>
-          </div>
-
-          <button className="w-full flex items-center justify-center gap-3 bg-secondary/30 border border-white/5 py-4 rounded-2xl font-bold text-sm hover:bg-secondary/50 transition-all">
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
-              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path>
-              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path>
-              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"></path>
-              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 12-4.53z" fill="#EA4335"></path>
-            </svg>
-            Google
+        {/* Logout Section */}
+        <section className="pt-4">
+          <button className="w-full flex items-center justify-center gap-3 p-4 rounded-2xl border border-destructive/20 text-destructive hover:bg-destructive/5 transition-all font-black text-xs uppercase tracking-widest">
+            <LogOut size={18} />
+            Sair da Conta
           </button>
-
-          <p className="text-center text-xs text-muted-foreground">
-            Não tem uma conta? 
-            <Link href="#" className="text-primary font-bold ml-1 hover:underline">Criar conta</Link>
-          </p>
-        </div>
+          <p className="text-center text-[8px] font-black text-muted-foreground/40 mt-12 uppercase tracking-[0.4em]">Torelli Agendamentos v2.4.0</p>
+        </section>
       </main>
 
-      {/* Decorative Accents */}
-      <div className="fixed top-12 left-12 w-24 h-24 border-t border-l border-primary/20 pointer-events-none hidden lg:block"></div>
-      <div className="fixed bottom-12 right-12 w-24 h-24 border-b border-r border-primary/20 pointer-events-none hidden lg:block"></div>
+      <BottomNav />
     </div>
   );
 }
