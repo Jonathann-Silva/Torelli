@@ -46,7 +46,7 @@ export default function ProfilePage() {
     { label: 'Meus Dados', icon: UserCog, href: '/profile/meus-dados' },
     { label: 'Notificações', icon: Bell, badge: true, href: '/notifications' },
     { label: 'Segurança', icon: Shield, href: '#' },
-    { label: 'Ajuda', icon: HelpCircle, href: '#' }
+    { label: 'Ajuda', icon: HelpCircle, href: '/help' }
   ];
 
   return (
