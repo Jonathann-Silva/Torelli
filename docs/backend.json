@@ -56,6 +56,18 @@
         "type": { "type": "string", "enum": ["info", "success", "alert"] }
       },
       "required": ["title", "message", "createdAt", "read"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User profile information.",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
     }
   },
   "auth": {
@@ -77,6 +89,10 @@
     "/notifications/{notificationId}": {
       "schema": "Notification",
       "description": "Collection of system notifications."
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Collection of user profile data."
     }
   }
 }
