@@ -86,13 +86,13 @@ export const BottomNav = () => {
       </Link>
       
       <Link 
-        href="/login" 
+        href="/profile" 
         className={cn(
           "flex flex-col items-center justify-center w-16 h-16 transition-all",
-          pathname === '/login' ? "text-primary scale-110" : "text-muted-foreground hover:text-primary"
+          pathname === '/profile' ? "text-primary scale-110" : "text-muted-foreground hover:text-primary"
         )}
       >
-        <User size={22} className={pathname === '/login' ? "fill-primary/20" : ""} />
+        <User size={22} className={pathname === '/profile' ? "fill-primary/20" : ""} />
         <span className="text-[9px] font-black uppercase mt-1 tracking-tighter">Perfil</span>
       </Link>
     </nav>

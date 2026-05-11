@@ -144,7 +144,7 @@ export default function MeusDadosPage() {
         description: "Suas informações foram salvas com sucesso no banco de dados.",
       });
       
-      router.push('/login'); // Volta para a página de perfil
+      router.push('/profile'); // Volta para a página de perfil
     } catch (error: any) {
       console.error(error);
       let message = "Ocorreu um erro ao salvar seus dados.";

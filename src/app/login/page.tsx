@@ -1,174 +1,60 @@
 
 "use client"
 
-import React, { useMemo } from 'react';
-import Image from 'next/image';
+import React from 'react';
 import { Header } from '@/components/layout/Header';
-import { BottomNav } from '@/components/layout/BottomNav';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { 
-  Scissors, 
-  Gift, 
-  Star, 
-  User, 
-  UserCog, 
-  Bell, 
-  Shield, 
-  HelpCircle, 
-  LogOut, 
-  ChevronRight,
-  CheckCircle2
-} from 'lucide-react';
-import { useUser, useDoc, useFirestore } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Scissors, LogIn } from 'lucide-react';
 import Link from 'next/link';
 
-export default function ProfilePage() {
-  const { user } = useUser();
-  const db = useFirestore();
-
-  const userDocRef = useMemo(() => {
-    if (!db || !user?.uid) return null;
-    return doc(db, 'users', user.uid);
-  }, [db, user?.uid]);
-
-  const { data: userData } = useDoc(userDocRef);
-  
-  const profileImg = user?.photoURL || PlaceHolderImages.find(img => img.id === 'client1')?.imageUrl;
-  const displayName = user?.displayName || "Cliente";
-  const memberSince = userData?.updatedAt ? new Date(userData.updatedAt).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }) : "---";
-  
-  const loyaltyPoints = userData?.loyaltyPoints || 0;
-  const maxPoints = 10;
-  const hasReward = loyaltyPoints >= maxPoints;
-
-  const menuItems = [
-    { label: 'Meus Dados', icon: UserCog, href: '/profile/meus-dados' },
-    { label: 'Notificações', icon: Bell, badge: true, href: '/notifications' },
-    { label: 'Segurança', icon: Shield, href: '#' },
-    { label: 'Ajuda', icon: HelpCircle, href: '#' }
-  ];
-
+export default function LoginPage() {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-black">
       <Header />
+      
+      <main className="max-w-[480px] mx-auto px-6 pt-32 space-y-12">
+        <div className="text-center space-y-4">
+          <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center text-primary mx-auto mb-6 amber-glow">
+            <Scissors size={40} />
+          </div>
+          <h2 className="text-4xl font-black text-white tracking-tighter">Bem-vindo</h2>
+          <p className="text-muted-foreground text-sm">Acesse sua conta para gerenciar seus agendamentos premium.</p>
+        </div>
 
-      <main className="mt-20 px-5 max-w-[480px] mx-auto space-y-8 pb-32">
-        {/* Profile Header Section */}
-        <section className="flex flex-col items-center text-center pt-4">
-          <div className="relative mb-4">
-            <div className="w-24 h-24 rounded-full border-2 border-primary p-1 bg-secondary transition-all">
-              {profileImg && (
-                <Image 
-                  src={profileImg} 
-                  alt={displayName} 
-                  width={96}
-                  height={96}
-                  className="w-full h-full rounded-full object-cover"
-                />
-              )}
+        <form className="space-y-6">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black text-primary uppercase tracking-widest ml-1">E-mail</Label>
+              <Input 
+                type="email" 
+                placeholder="seu@email.com" 
+                className="bg-[#1A1A1A] border-white/5 h-14 rounded-xl focus:ring-primary text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black text-primary uppercase tracking-widest ml-1">Senha</Label>
+              <Input 
+                type="password" 
+                placeholder="********" 
+                className="bg-[#1A1A1A] border-white/5 h-14 rounded-xl focus:ring-primary text-white"
+              />
             </div>
           </div>
-          <h2 className="text-2xl font-black text-white tracking-tight">{displayName}</h2>
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mt-1">Membro desde {memberSince}</p>
-        </section>
 
-        {/* Digital Loyalty Card Section */}
-        <section className="bg-secondary/40 border border-white/5 rounded-3xl p-6 relative overflow-hidden">
-          <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-primary/5 rounded-full blur-3xl"></div>
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h3 className="text-[10px] font-black text-primary tracking-[0.3em] uppercase">Cartão Fidelidade</h3>
-              <p className="text-muted-foreground text-[10px] font-medium">
-                {hasReward ? "Parabéns! Você tem um corte grátis!" : "Complete 10 e ganhe um corte"}
-              </p>
-            </div>
-            <span className="text-2xl font-black text-primary">{Math.min(loyaltyPoints, maxPoints)}/{maxPoints}</span>
-          </div>
-          
-          <div className="grid grid-cols-5 gap-3 mb-2">
-            {[...Array(maxPoints)].map((_, i) => {
-              const isFilled = i < loyaltyPoints;
-              const isLast = i === maxPoints - 1;
-              
-              if (isLast && hasReward) {
-                return (
-                  <div key={i} className="h-10 bg-primary rounded-xl flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20 animate-bounce">
-                    <Gift size={16} />
-                  </div>
-                );
-              }
+          <Button className="w-full h-14 rounded-xl bg-primary text-primary-foreground font-black uppercase tracking-widest amber-glow hover:brightness-110 active:scale-95 transition-all">
+            Entrar
+          </Button>
+        </form>
 
-              return (
-                <div 
-                  key={i} 
-                  className={`h-10 rounded-xl flex items-center justify-center transition-all ${
-                    isFilled 
-                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/10' 
-                    : 'border border-white/5 bg-secondary/30 text-muted-foreground/20'
-                  }`}
-                >
-                  <Scissors size={16} className={isFilled ? "opacity-100" : "opacity-20"} />
-                </div>
-              );
-            })}
-          </div>
-
-          {hasReward && (
-            <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-xl flex items-center gap-2 justify-center">
-              <CheckCircle2 size={14} className="text-primary" />
-              <span className="text-[10px] font-black text-primary uppercase tracking-widest">Aproveite seu desconto no próximo corte!</span>
-            </div>
-          )}
-        </section>
-
-        {/* Quick Stats Grid */}
-        <section className="grid grid-cols-3 gap-3">
-          <div className="bg-secondary/20 border border-white/5 p-4 rounded-2xl flex flex-col items-center">
-            <span className="text-xl font-black text-white">{userData?.loyaltyPoints || 0}</span>
-            <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest mt-1">Pontos</span>
-          </div>
-          <div className="bg-secondary/20 border border-white/5 p-4 rounded-2xl flex flex-col items-center text-center">
-            <Star size={16} className="text-primary mb-1 fill-primary" />
-            <span className="text-[8px] font-black text-white uppercase leading-none">VIP Status</span>
-          </div>
-          <div className="bg-secondary/20 border border-white/5 p-4 rounded-2xl flex flex-col items-center text-center">
-            <User size={16} className="text-primary mb-1" />
-            <span className="text-[8px] font-black text-white uppercase leading-none">{userData?.phone || 'Sem Telefone'}</span>
-          </div>
-        </section>
-
-        {/* Menu List Section */}
-        <section className="space-y-2">
-          {menuItems.map((item, i) => (
-            <Link key={i} href={item.href}>
-              <button className="w-full flex items-center justify-between p-4 bg-secondary/20 rounded-2xl hover:bg-secondary/40 transition-all group mb-2">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-secondary/60 flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
-                    <item.icon size={20} />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-foreground">{item.label}</span>
-                    {item.badge && <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>}
-                  </div>
-                </div>
-                <ChevronRight size={18} className="text-muted-foreground" />
-              </button>
-            </Link>
-          ))}
-        </section>
-
-        {/* Logout Section */}
-        <section className="pt-4">
-          <button className="w-full flex items-center justify-center gap-3 p-4 rounded-2xl border border-destructive/20 text-destructive hover:bg-destructive/5 transition-all font-black text-xs uppercase tracking-widest">
-            <LogOut size={18} />
-            Sair da Conta
-          </button>
-          <p className="text-center text-[8px] font-black text-muted-foreground/40 mt-12 uppercase tracking-[0.4em]">Torelli Agendamentos V0.0.9</p>
-        </section>
+        <div className="text-center space-y-6">
+          <p className="text-xs text-muted-foreground">Não tem uma conta?</p>
+          <Link href="/register" className="text-primary font-black uppercase text-[10px] tracking-[0.2em] hover:underline">
+            Criar conta agora
+          </Link>
+        </div>
       </main>
-
-      <BottomNav />
     </div>
   );
 }
