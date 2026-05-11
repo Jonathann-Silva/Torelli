@@ -1,3 +1,4 @@
+
 "use client"
 
 import React from 'react';
@@ -60,7 +61,7 @@ export default function HomePage() {
             {[
               { label: 'Cabelo', icon: Scissors },
               { label: 'Barba', icon: Zap },
-              { label: 'Spa', icon: Sparkles }
+              { label: 'Combo', icon: Sparkles }
             ].map((cat, i) => (
               <div key={i} className="premium-card p-4 rounded-2xl flex flex-col items-center gap-2 cursor-pointer group">
                 <div className="w-10 h-10 flex items-center justify-center bg-secondary rounded-full group-hover:bg-primary/20 transition-colors">
