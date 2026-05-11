@@ -74,7 +74,7 @@ export default function NotificationsPage() {
                 <Bell size={20} />
               </div>
               <div>
-                <h4 className="text-xs font-black text-white uppercase tracking-wider">Push Notifications</h4>
+                <h4 className="text-xs font-black text-white uppercase tracking-wider">Notificações Push</h4>
                 <p className="text-[10px] font-medium text-muted-foreground">Alertas no dispositivo</p>
               </div>
             </div>
