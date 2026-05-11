@@ -2,10 +2,10 @@
 "use client"
 
 import React, { useMemo } from 'react';
-import { Bell, CheckCheck, Info, ShieldCheck } from 'lucide-react';
+import { Bell, CheckCheck, Info, ShieldCheck, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useCollection, useFirestore, useUser } from '@/firebase';
 import { collection, query, orderBy, limit, doc, updateDoc, where } from 'firebase/firestore';
@@ -22,6 +22,7 @@ export const Header = () => {
   const db = useFirestore();
   const { user } = useUser();
   const pathname = usePathname();
+  const router = useRouter();
   const isAdmin = pathname.startsWith('/admin');
   const managerImg = PlaceHolderImages.find(img => img.id === 'manager');
 
@@ -56,9 +57,20 @@ export const Header = () => {
     updateDoc(notificationRef, { read: true });
   };
 
+  const showBackButton = pathname !== '/' && pathname !== '/admin';
+
   return (
     <header className="flex justify-between items-center px-4 h-16 w-full z-50 fixed top-0 left-0 right-0 max-w-[480px] mx-auto bg-background/80 backdrop-blur-md border-b border-white/5">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
+        {showBackButton && (
+          <button 
+            onClick={() => router.back()}
+            className="p-1 -ml-1 text-muted-foreground hover:text-primary transition-colors focus:outline-none"
+          >
+            <ChevronLeft size={24} />
+          </button>
+        )}
+        
         {isAdmin ? (
           <div className="flex items-center gap-2">
             <div className="bg-primary/20 p-1.5 rounded-lg text-primary">
