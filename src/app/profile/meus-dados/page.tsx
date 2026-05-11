@@ -128,10 +128,6 @@ export default function MeusDadosPage() {
             </Button>
           </div>
         </form>
-
-        <div className="flex justify-center opacity-5 select-none pt-10">
-          <span className="text-8xl font-black text-white">TA</span>
-        </div>
       </main>
 
       <BottomNav />
