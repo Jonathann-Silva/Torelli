@@ -19,13 +19,17 @@ import {
   ChevronRight,
   CheckCircle2
 } from 'lucide-react';
-import { useUser, useDoc, useFirestore } from '@/firebase';
+import { useUser, useDoc, useFirestore, useAuth } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import { signOut } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function ProfilePage() {
   const { user } = useUser();
   const db = useFirestore();
+  const auth = useAuth();
+  const router = useRouter();
 
   const userDocRef = useMemo(() => {
     if (!db || !user?.uid) return null;
@@ -41,6 +45,15 @@ export default function ProfilePage() {
   const loyaltyPoints = userData?.loyaltyPoints || 0;
   const maxPoints = 10;
   const hasReward = loyaltyPoints >= maxPoints;
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.push('/login');
+    } catch (error) {
+      console.error('Erro ao sair:', error);
+    }
+  };
 
   const menuItems = [
     { label: 'Meus Dados', icon: UserCog, href: '/profile/meus-dados' },
@@ -160,7 +173,10 @@ export default function ProfilePage() {
 
         {/* Logout Section */}
         <section className="pt-4">
-          <button className="w-full flex items-center justify-center gap-3 p-4 rounded-2xl border border-destructive/20 text-destructive hover:bg-destructive/5 transition-all font-black text-xs uppercase tracking-widest">
+          <button 
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-3 p-4 rounded-2xl border border-destructive/20 text-destructive hover:bg-destructive/5 transition-all font-black text-xs uppercase tracking-widest"
+          >
             <LogOut size={18} />
             Sair da Conta
           </button>
