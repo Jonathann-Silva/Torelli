@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { useState } from 'react';
+import React, { useMemo } from 'react';
 import Image from 'next/image';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
@@ -16,17 +16,31 @@ import {
   Shield, 
   HelpCircle, 
   LogOut, 
-  ChevronRight 
+  ChevronRight,
+  CheckCircle2
 } from 'lucide-react';
-import { useUser } from '@/firebase';
+import { useUser, useDoc, useFirestore } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import Link from 'next/link';
 
 export default function ProfilePage() {
   const { user } = useUser();
+  const db = useFirestore();
+
+  const userDocRef = useMemo(() => {
+    if (!db || !user?.uid) return null;
+    return doc(db, 'users', user.uid);
+  }, [db, user?.uid]);
+
+  const { data: userData } = useDoc(userDocRef);
   
-  const profileImg = PlaceHolderImages.find(img => img.id === 'client1');
-  const displayName = user?.displayName || "Gabriel Martins";
-  const memberSince = "Nov 2023";
+  const profileImg = user?.photoURL || PlaceHolderImages.find(img => img.id === 'client1')?.imageUrl;
+  const displayName = user?.displayName || "Cliente";
+  const memberSince = userData?.updatedAt ? new Date(userData.updatedAt).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }) : "---";
+  
+  const loyaltyPoints = userData?.loyaltyPoints || 0;
+  const maxPoints = 10;
+  const hasReward = loyaltyPoints >= maxPoints;
 
   const menuItems = [
     { label: 'Meus Dados', icon: UserCog, href: '/profile/meus-dados' },
@@ -44,13 +58,15 @@ export default function ProfilePage() {
         <section className="flex flex-col items-center text-center pt-4">
           <div className="relative mb-4">
             <div className="w-24 h-24 rounded-full border-2 border-primary p-1 bg-secondary transition-all">
-              <Image 
-                src={profileImg?.imageUrl || ''} 
-                alt={displayName} 
-                width={96}
-                height={96}
-                className="w-full h-full rounded-full object-cover"
-              />
+              {profileImg && (
+                <Image 
+                  src={profileImg} 
+                  alt={displayName} 
+                  width={96}
+                  height={96}
+                  className="w-full h-full rounded-full object-cover"
+                />
+              )}
             </div>
           </div>
           <h2 className="text-2xl font-black text-white tracking-tight">{displayName}</h2>
@@ -63,37 +79,62 @@ export default function ProfilePage() {
           <div className="flex justify-between items-center mb-6">
             <div>
               <h3 className="text-[10px] font-black text-primary tracking-[0.3em] uppercase">Cartão Fidelidade</h3>
-              <p className="text-muted-foreground text-[10px] font-medium">Complete 10 e ganhe um corte</p>
+              <p className="text-muted-foreground text-[10px] font-medium">
+                {hasReward ? "Parabéns! Você tem um corte grátis!" : "Complete 10 e ganhe um corte"}
+              </p>
             </div>
-            <span className="text-2xl font-black text-primary">8/10</span>
+            <span className="text-2xl font-black text-primary">{Math.min(loyaltyPoints, maxPoints)}/{maxPoints}</span>
           </div>
           
           <div className="grid grid-cols-5 gap-3 mb-2">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="h-10 bg-primary rounded-xl flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/10">
-                <Scissors size={16} />
-              </div>
-            ))}
-            <div className="h-10 border border-white/5 bg-secondary/30 rounded-xl"></div>
-            <div className="h-10 border border-primary/20 bg-primary/5 rounded-xl flex items-center justify-center text-primary/40">
-              <Gift size={16} />
-            </div>
+            {[...Array(maxPoints)].map((_, i) => {
+              const isFilled = i < loyaltyPoints;
+              const isLast = i === maxPoints - 1;
+              
+              if (isLast && hasReward) {
+                return (
+                  <div key={i} className="h-10 bg-primary rounded-xl flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20 animate-bounce">
+                    <Gift size={16} />
+                  </div>
+                );
+              }
+
+              return (
+                <div 
+                  key={i} 
+                  className={`h-10 rounded-xl flex items-center justify-center transition-all ${
+                    isFilled 
+                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/10' 
+                    : 'border border-white/5 bg-secondary/30 text-muted-foreground/20'
+                  }`}
+                >
+                  <Scissors size={16} className={isFilled ? "opacity-100" : "opacity-20"} />
+                </div>
+              );
+            })}
           </div>
+
+          {hasReward && (
+            <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-xl flex items-center gap-2 justify-center">
+              <CheckCircle2 size={14} className="text-primary" />
+              <span className="text-[10px] font-black text-primary uppercase tracking-widest">Aproveite seu desconto no próximo corte!</span>
+            </div>
+          )}
         </section>
 
         {/* Quick Stats Grid */}
         <section className="grid grid-cols-3 gap-3">
           <div className="bg-secondary/20 border border-white/5 p-4 rounded-2xl flex flex-col items-center">
-            <span className="text-xl font-black text-white">12</span>
-            <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest mt-1">Visitas</span>
+            <span className="text-xl font-black text-white">{userData?.loyaltyPoints || 0}</span>
+            <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest mt-1">Pontos</span>
           </div>
           <div className="bg-secondary/20 border border-white/5 p-4 rounded-2xl flex flex-col items-center text-center">
             <Star size={16} className="text-primary mb-1 fill-primary" />
-            <span className="text-[8px] font-black text-white uppercase leading-none">Corte Executive</span>
+            <span className="text-[8px] font-black text-white uppercase leading-none">VIP Status</span>
           </div>
           <div className="bg-secondary/20 border border-white/5 p-4 rounded-2xl flex flex-col items-center text-center">
             <User size={16} className="text-primary mb-1" />
-            <span className="text-[8px] font-black text-white uppercase leading-none">Ricardo Silva</span>
+            <span className="text-[8px] font-black text-white uppercase leading-none">{userData?.phone || 'Sem Telefone'}</span>
           </div>
         </section>
 

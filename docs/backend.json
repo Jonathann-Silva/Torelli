@@ -6,6 +6,7 @@
       "description": "A scheduled service for a client.",
       "type": "object",
       "properties": {
+        "userId": { "type": "string", "description": "Reference to the client user ID" },
         "clientName": { "type": "string" },
         "serviceName": { "type": "string" },
         "barberName": { "type": "string" },
@@ -66,7 +67,8 @@
         "email": { "type": "string", "format": "email" },
         "phone": { "type": "string" },
         "photoURL": { "type": "string" },
-        "updatedAt": { "type": "string", "format": "date-time" }
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "loyaltyPoints": { "type": "number", "description": "Current points in the loyalty cycle" }
       }
     }
   },
