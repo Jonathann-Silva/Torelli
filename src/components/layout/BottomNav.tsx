@@ -94,14 +94,6 @@ export const BottomNav = () => {
           <Calendar size={22} className={pathname === '/appointments' ? "fill-primary/20" : ""} />
           <span className="text-[9px] font-black uppercase mt-1 tracking-tighter">Agenda</span>
         </Link>
-
-        <Link 
-          href="/admin" 
-          className="flex flex-col items-center justify-center w-16 h-16 text-muted-foreground hover:text-primary"
-        >
-          <LayoutDashboard size={22} />
-          <span className="text-[9px] font-black uppercase mt-1 tracking-tighter">Gestão</span>
-        </Link>
         
         <Link 
           href="/login" 
