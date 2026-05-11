@@ -9,8 +9,10 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Scissors, Zap, Sparkles, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { SERVICES } from '@/lib/mock-data';
+import { useUser } from '@/firebase';
 
 export default function HomePage() {
+  const { user } = useUser();
   const heroImg = PlaceHolderImages.find(img => img.id === 'hero-promo');
 
   return (
@@ -21,7 +23,7 @@ export default function HomePage() {
         {/* Welcome Greeting */}
         <section className="space-y-1">
           <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-[0.2em]">Bem-vindo de volta,</p>
-          <h2 className="text-3xl font-black text-primary tracking-tighter">Gabriel Martins</h2>
+          <h2 className="text-3xl font-black text-primary tracking-tighter">{user?.displayName || 'Cliente'}</h2>
         </section>
 
         {/* Promotional Banner */}
