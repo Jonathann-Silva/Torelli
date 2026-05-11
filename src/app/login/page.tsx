@@ -168,7 +168,7 @@ export default function ProfilePage() {
             <LogOut size={18} />
             Sair da Conta
           </button>
-          <p className="text-center text-[8px] font-black text-muted-foreground/40 mt-12 uppercase tracking-[0.4em]">Torelli Agendamentos v2.4.0</p>
+          <p className="text-center text-[8px] font-black text-muted-foreground/40 mt-12 uppercase tracking-[0.4em]">Torelli Agendamentos V0.0.9</p>
         </section>
       </main>
 
