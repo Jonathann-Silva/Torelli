@@ -1,12 +1,12 @@
 
 "use client"
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Image from 'next/image';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { User, Mail, Phone, Lock, Camera, Check } from 'lucide-react';
+import { User, Mail, Phone, Lock, Camera, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,13 +16,43 @@ import { useRouter } from 'next/navigation';
 export default function MeusDadosPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const profileImg = PlaceHolderImages.find(img => img.id === 'client1');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const defaultImage = PlaceHolderImages.find(img => img.id === 'client1')?.imageUrl || '';
+  const [profileImage, setProfileImage] = useState(defaultImage);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfileImage(reader.result as string);
+        toast({
+          title: "Foto atualizada!",
+          description: "Sua nova foto de perfil foi carregada.",
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handlePhotoAction = () => {
+    if (profileImage === defaultImage) {
+      fileInputRef.current?.click();
+    } else {
+      setProfileImage(defaultImage);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      toast({
+        title: "Foto removida",
+        description: "Sua foto de perfil voltou ao padrão.",
+      });
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     
-    // Simulação de salvamento
     setTimeout(() => {
       setLoading(false);
       toast({
@@ -42,22 +72,33 @@ export default function MeusDadosPage() {
           <div className="relative group">
             <div className="w-32 h-32 rounded-full overflow-hidden border-2 border-primary p-1 bg-secondary/30">
               <Image 
-                src={profileImg?.imageUrl || ''} 
+                src={profileImage} 
                 alt="Profile" 
                 width={128} 
                 height={128} 
                 className="w-full h-full object-cover rounded-full"
               />
             </div>
-            <button className="absolute bottom-0 right-0 bg-primary text-primary-foreground p-2 rounded-full shadow-lg transition-transform active:scale-95 amber-glow">
-              <Camera size={20} />
+            
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              className="hidden" 
+              accept="image/*" 
+              onChange={handleImageChange}
+            />
+            
+            <button 
+              onClick={handlePhotoAction}
+              className="absolute bottom-0 right-0 bg-primary text-primary-foreground p-2 rounded-full shadow-lg transition-transform active:scale-95 amber-glow"
+            >
+              {profileImage === defaultImage ? <Camera size={20} /> : <X size={20} />}
             </button>
           </div>
           <h2 className="text-2xl font-black text-white mt-6 tracking-tight">Meus Dados</h2>
           <p className="text-xs font-medium text-muted-foreground opacity-70 uppercase tracking-widest mt-1">Gerencie suas informações pessoais</p>
         </div>
 
-        {/* Form Section */}
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
             <div className="space-y-2">
