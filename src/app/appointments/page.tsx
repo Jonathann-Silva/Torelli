@@ -6,12 +6,13 @@ import Image from 'next/image';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Calendar, Clock, Scissors, Loader2, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, Loader2, AlertCircle, Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useCollection, useFirestore, useUser } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 export default function AppointmentsPage() {
   const { user } = useUser();
@@ -165,15 +166,13 @@ export default function AppointmentsPage() {
           )}
 
           {activeTab === 'upcoming' && (
-            <div className="mt-8 relative overflow-hidden bg-primary p-8 rounded-3xl flex flex-col items-center justify-between gap-6 group">
-              <div className="relative z-10 space-y-4 text-center">
-                <h4 className="text-3xl font-black text-primary-foreground leading-tight tracking-tight">Mantenha seu visual impecável.</h4>
-                <p className="text-primary-foreground/80 font-medium text-sm">Assine nosso plano mensal e tenha prioridade na agenda.</p>
-                <Button className="bg-primary-foreground text-primary px-8 h-12 rounded-xl font-black uppercase tracking-widest shadow-xl">Saber Mais</Button>
-              </div>
-              <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-10 pointer-events-none group-hover:scale-110 transition-transform duration-700">
-                <Scissors size={240} className="rotate-12" />
-              </div>
+            <div className="mt-8 pt-4">
+              <Link href="/book">
+                <Button className="w-full bg-primary text-primary-foreground h-16 rounded-2xl font-black text-lg uppercase tracking-widest amber-glow shadow-2xl hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-3">
+                  <Plus size={24} />
+                  Agendar Novo Horário
+                </Button>
+              </Link>
             </div>
           )}
         </div>
