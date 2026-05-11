@@ -2,7 +2,6 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -65,14 +64,12 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-black">
-      <Header />
-      
-      <main className="max-w-[480px] mx-auto px-6 pt-32 space-y-12">
+      <main className="max-w-[480px] mx-auto px-6 pt-24 space-y-12">
         <div className="text-center space-y-4">
           <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center text-primary mx-auto mb-6 amber-glow">
             <Scissors size={40} />
           </div>
-          <h2 className="text-4xl font-black text-white tracking-tighter">Bem-vindo</h2>
+          <h2 className="text-4xl font-black text-white tracking-tighter">Barbearia Torelli</h2>
           <p className="text-muted-foreground text-sm">Acesse sua conta para gerenciar seus agendamentos premium.</p>
         </div>
 
