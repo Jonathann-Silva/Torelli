@@ -82,7 +82,7 @@ export const Header = () => {
           </div>
         ) : (
           <Link href="/">
-            <h1 className="font-headline text-xl font-extrabold tracking-tighter text-primary leading-none">Torelli Agendamentos</h1>
+            <h1 className="font-headline text-xl font-extrabold tracking-tighter text-primary leading-none">Barbearia Torelli</h1>
           </Link>
         )}
       </div>
