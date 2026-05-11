@@ -45,6 +45,20 @@
         "updatedAt": { "type": "string", "format": "date-time" },
         "loyaltyPoints": { "type": "number", "description": "Current points in the loyalty cycle" }
       }
+    },
+    "Barber": {
+      "title": "Barber",
+      "description": "A professional barber at the shop.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "specialty": { "type": "string" },
+        "image": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "inactive"] },
+        "schedule": { "type": "string" },
+        "break": { "type": "string" }
+      },
+      "required": ["name", "specialty", "status"]
     }
   },
   "auth": {
@@ -62,6 +76,10 @@
     "/users/{userId}": {
       "schema": "User",
       "description": "Collection of user profile data."
+    },
+    "/barbers/{barberId}": {
+      "schema": "Barber",
+      "description": "Collection of shop barbers."
     }
   }
 }
