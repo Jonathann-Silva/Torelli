@@ -12,38 +12,11 @@
         "barberName": { "type": "string" },
         "date": { "type": "string", "description": "ISO format date YYYY-MM-DD" },
         "time": { "type": "string", "description": "Time in HH:mm format" },
-        "status": { "type": "string", "enum": ["confirmed", "ongoing", "cancelled", "completed"] },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "ongoing", "cancelled", "completed"] },
         "clientImage": { "type": "string" },
         "price": { "type": "number" }
       },
       "required": ["clientName", "serviceName", "barberName", "date", "time", "status"]
-    },
-    "Barber": {
-      "title": "Barber",
-      "description": "A barber working at the shop.",
-      "type": "object",
-      "properties": {
-        "name": { "type": "string" },
-        "specialty": { "type": "string" },
-        "image": { "type": "string" },
-        "status": { "type": "string", "enum": ["active", "inactive"] },
-        "schedule": { "type": "string" },
-        "break": { "type": "string" }
-      },
-      "required": ["name", "status"]
-    },
-    "Service": {
-      "title": "Service",
-      "description": "A service offered by the barbershop.",
-      "type": "object",
-      "properties": {
-        "name": { "type": "string" },
-        "description": { "type": "string" },
-        "duration": { "type": "number" },
-        "price": { "type": "number" },
-        "image": { "type": "string" }
-      },
-      "required": ["name", "price", "duration"]
     },
     "Notification": {
       "title": "Notification",
@@ -54,9 +27,11 @@
         "message": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
         "read": { "type": "boolean" },
-        "type": { "type": "string", "enum": ["info", "success", "alert"] }
+        "type": { "type": "string", "enum": ["info", "success", "alert"] },
+        "recipientId": { "type": "string", "description": "User ID of the recipient" },
+        "recipientRole": { "type": "string", "enum": ["admin", "client"] }
       },
-      "required": ["title", "message", "createdAt", "read"]
+      "required": ["title", "message", "createdAt", "read", "recipientRole"]
     },
     "User": {
       "title": "User",
@@ -79,14 +54,6 @@
     "/appointments/{appointmentId}": {
       "schema": "Appointment",
       "description": "Collection of client appointments."
-    },
-    "/barbers/{barberId}": {
-      "schema": "Barber",
-      "description": "Collection of barbers."
-    },
-    "/services/{serviceId}": {
-      "schema": "Service",
-      "description": "Collection of services."
     },
     "/notifications/{notificationId}": {
       "schema": "Notification",
