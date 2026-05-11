@@ -1,16 +1,34 @@
+
 "use client"
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import Image from 'next/image';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Calendar, Clock, Scissors, MoreHorizontal } from 'lucide-react';
-import { APPOINTMENTS } from '@/lib/mock-data';
+import { Calendar, Clock, Scissors, Loader2, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useCollection, useFirestore, useUser } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
 
 export default function AppointmentsPage() {
+  const { user } = useUser();
+  const db = useFirestore();
+
+  const appointmentsQuery = useMemo(() => {
+    if (!db) return null;
+    // Filtramos pelo nome do cliente. Se o usuário estiver logado com Google, usamos o nome dele.
+    // Caso contrário, usamos o nome padrão "Gabriel Martins" para fins de demonstração.
+    const nameToFilter = user?.displayName || 'Gabriel Martins';
+    return query(
+      collection(db, 'appointments'),
+      where('clientName', '==', nameToFilter)
+    );
+  }, [db, user]);
+
+  const { data: appointments = [], loading, error } = useCollection(appointmentsQuery);
+
   return (
     <div className="min-h-screen">
       <Header />
@@ -27,62 +45,82 @@ export default function AppointmentsPage() {
         </div>
 
         <div className="grid grid-cols-1 gap-6">
-          {APPOINTMENTS.map((apt) => {
-            const barberImg = PlaceHolderImages.find(img => img.id === 'barber' + (apt.barberName.includes('Marcos') ? '3' : '1'));
-            return (
-              <div key={apt.id} className="premium-card p-6 rounded-2xl flex flex-col gap-6 group hover:border-primary/40 transition-all">
-                <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-secondary overflow-hidden relative border border-white/5">
-                      {barberImg && (
-                        <Image 
-                          src={barberImg.imageUrl} 
-                          alt="Barber" 
-                          fill 
-                          className="object-cover"
-                          data-ai-hint={barberImg.imageHint}
-                        />
-                      )}
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <Loader2 className="animate-spin text-primary" size={40} />
+              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Buscando seus agendamentos...</p>
+            </div>
+          ) : error ? (
+            <div className="premium-card p-10 rounded-2xl flex flex-col items-center text-center gap-4">
+              <AlertCircle className="text-destructive" size={40} />
+              <p className="text-sm font-medium text-muted-foreground">Não foi possível carregar seus dados.</p>
+            </div>
+          ) : appointments.length > 0 ? (
+            appointments.map((apt: any) => {
+              const barberImg = PlaceHolderImages.find(img => img.id === 'barber' + (apt.barberName?.includes('Marco') ? '3' : '1'));
+              return (
+                <div key={apt.id} className="premium-card p-6 rounded-2xl flex flex-col gap-6 group hover:border-primary/40 transition-all">
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 rounded-2xl bg-secondary overflow-hidden relative border border-white/5">
+                        {barberImg && (
+                          <Image 
+                            src={barberImg.imageUrl} 
+                            alt="Barber" 
+                            fill 
+                            className="object-cover"
+                            data-ai-hint={barberImg.imageHint}
+                          />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Barbeiro</p>
+                        <h3 className="text-xl font-bold text-primary leading-tight">{apt.barberName}</h3>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Barbeiro</p>
-                      <h3 className="text-xl font-bold text-primary leading-tight">{apt.barberName}</h3>
+                    <Badge variant={apt.status === 'ongoing' ? 'default' : 'secondary'} className="rounded-full px-3 py-1 font-bold text-[10px] uppercase tracking-widest">
+                      {apt.status === 'ongoing' ? 'Em Andamento' : apt.status === 'confirmed' ? 'Confirmado' : apt.status}
+                    </Badge>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 py-4 border-y border-white/5">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1 text-muted-foreground text-[10px] font-bold uppercase tracking-widest">
+                        <Calendar size={12} />
+                        <span>Data</span>
+                      </div>
+                      <p className="text-sm font-semibold text-foreground">{apt.date}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1 text-muted-foreground text-[10px] font-bold uppercase tracking-widest">
+                        <Clock size={12} />
+                        <span>Hora</span>
+                      </div>
+                      <p className="text-sm font-semibold text-foreground">{apt.time}</p>
                     </div>
                   </div>
-                  <Badge variant={apt.status === 'ongoing' ? 'default' : 'secondary'} className="rounded-full px-3 py-1 font-bold text-[10px] uppercase tracking-widest">
-                    {apt.status === 'ongoing' ? 'Em Andamento' : 'Confirmado'}
-                  </Badge>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4 py-4 border-y border-white/5">
                   <div className="space-y-1">
-                    <div className="flex items-center gap-1 text-muted-foreground text-[10px] font-bold uppercase tracking-widest">
-                      <Calendar size={12} />
-                      <span>Data</span>
-                    </div>
-                    <p className="text-sm font-semibold text-foreground">{apt.date}</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Serviço</p>
+                    <p className="text-lg font-black text-foreground">{apt.serviceName}</p>
                   </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-1 text-muted-foreground text-[10px] font-bold uppercase tracking-widest">
-                      <Clock size={12} />
-                      <span>Hora</span>
-                    </div>
-                    <p className="text-sm font-semibold text-foreground">{apt.time}</p>
+
+                  <div className="flex gap-3 pt-2">
+                    <Button variant="secondary" className="flex-1 rounded-xl h-12 font-bold uppercase tracking-widest text-xs">Remarcar</Button>
+                    <Button variant="outline" className="flex-1 rounded-xl h-12 font-bold uppercase tracking-widest text-xs text-destructive border-destructive/20 hover:bg-destructive/10">Cancelar</Button>
                   </div>
                 </div>
-
-                <div className="space-y-1">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Serviço</p>
-                  <p className="text-lg font-black text-foreground">{apt.serviceName}</p>
-                </div>
-
-                <div className="flex gap-3 pt-2">
-                  <Button variant="secondary" className="flex-1 rounded-xl h-12 font-bold uppercase tracking-widest text-xs">Remarcar</Button>
-                  <Button variant="outline" className="flex-1 rounded-xl h-12 font-bold uppercase tracking-widest text-xs text-destructive border-destructive/20 hover:bg-destructive/10">Cancelar</Button>
-                </div>
+              );
+            })
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 opacity-50">
+              <Calendar size={48} className="text-muted-foreground" />
+              <div className="space-y-1">
+                <p className="text-[10px] font-black uppercase tracking-widest">Nenhum agendamento</p>
+                <p className="text-xs text-muted-foreground">Você ainda não possui horários marcados.</p>
               </div>
-            );
-          })}
+            </div>
+          )}
 
           <div className="mt-8 relative overflow-hidden bg-primary p-8 rounded-3xl flex flex-col items-center justify-between gap-6 group">
             <div className="relative z-10 space-y-4 text-center">
