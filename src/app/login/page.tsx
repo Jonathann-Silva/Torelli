@@ -1,13 +1,12 @@
 
 "use client"
 
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { 
-  Camera, 
   Scissors, 
   Gift, 
   Star, 
@@ -19,47 +18,15 @@ import {
   LogOut, 
   ChevronRight 
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { useUser } from '@/firebase';
-import { toast } from '@/hooks/use-toast';
 import Link from 'next/link';
 
 export default function ProfilePage() {
   const { user } = useUser();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [tempPhotoUrl, setTempPhotoUrl] = useState<string | null>(null);
   
   const profileImg = PlaceHolderImages.find(img => img.id === 'client1');
   const displayName = user?.displayName || "Gabriel Martins";
   const memberSince = "Nov 2023";
-
-  const handlePhotoClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        toast({
-          title: "Arquivo muito grande",
-          description: "Por favor, escolha uma imagem com menos de 2MB.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setTempPhotoUrl(e.target?.result as string);
-        toast({
-          title: "Foto atualizada",
-          description: "Sua foto de perfil foi alterada localmente.",
-        });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
   const menuItems = [
     { label: 'Meus Dados', icon: UserCog, href: '/profile/meus-dados' },
@@ -76,32 +43,15 @@ export default function ProfilePage() {
         {/* Profile Header Section */}
         <section className="flex flex-col items-center text-center pt-4">
           <div className="relative mb-4">
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              className="hidden" 
-              accept="image/*" 
-              onChange={handleFileChange}
-            />
-            <div 
-              className="w-24 h-24 rounded-full border-2 border-primary p-1 bg-secondary cursor-pointer hover:brightness-110 transition-all"
-              onClick={handlePhotoClick}
-            >
+            <div className="w-24 h-24 rounded-full border-2 border-primary p-1 bg-secondary transition-all">
               <Image 
-                src={tempPhotoUrl || profileImg?.imageUrl || ''} 
+                src={profileImg?.imageUrl || ''} 
                 alt={displayName} 
                 width={96}
                 height={96}
                 className="w-full h-full rounded-full object-cover"
               />
             </div>
-            <button 
-              onClick={handlePhotoClick}
-              className="absolute -bottom-2 right-0 bg-primary text-primary-foreground px-3 py-1 rounded-full text-[10px] font-black tracking-widest flex items-center gap-1 shadow-lg amber-glow hover:scale-105 active:scale-95 transition-all"
-            >
-              <Camera size={12} className="fill-current" />
-              FOTO
-            </button>
           </div>
           <h2 className="text-2xl font-black text-white tracking-tight">{displayName}</h2>
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mt-1">Membro desde {memberSince}</p>
