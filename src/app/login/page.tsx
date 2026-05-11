@@ -22,6 +22,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/firebase';
 import { toast } from '@/hooks/use-toast';
+import Link from 'next/link';
 
 export default function ProfilePage() {
   const { user } = useUser();
@@ -59,6 +60,13 @@ export default function ProfilePage() {
       reader.readAsDataURL(file);
     }
   };
+
+  const menuItems = [
+    { label: 'Meus Dados', icon: UserCog, href: '/profile/meus-dados' },
+    { label: 'Notificações', icon: Bell, badge: true, href: '#' },
+    { label: 'Segurança', icon: Shield, href: '#' },
+    { label: 'Ajuda', icon: HelpCircle, href: '#' }
+  ];
 
   return (
     <div className="min-h-screen">
@@ -141,24 +149,21 @@ export default function ProfilePage() {
 
         {/* Menu List Section */}
         <section className="space-y-2">
-          {[
-            { label: 'Meus Dados', icon: UserCog },
-            { label: 'Notificações', icon: Bell, badge: true },
-            { label: 'Segurança', icon: Shield },
-            { label: 'Ajuda', icon: HelpCircle }
-          ].map((item, i) => (
-            <button key={i} className="w-full flex items-center justify-between p-4 bg-secondary/20 rounded-2xl hover:bg-secondary/40 transition-all group">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-secondary/60 flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
-                  <item.icon size={20} />
+          {menuItems.map((item, i) => (
+            <Link key={i} href={item.href}>
+              <button className="w-full flex items-center justify-between p-4 bg-secondary/20 rounded-2xl hover:bg-secondary/40 transition-all group mb-2">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-secondary/60 flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
+                    <item.icon size={20} />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-foreground">{item.label}</span>
+                    {item.badge && <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>}
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-foreground">{item.label}</span>
-                  {item.badge && <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>}
-                </div>
-              </div>
-              <ChevronRight size={18} className="text-muted-foreground" />
-            </button>
+                <ChevronRight size={18} className="text-muted-foreground" />
+              </button>
+            </Link>
           ))}
         </section>
 
