@@ -56,9 +56,9 @@
     },
     {
       "id": "hero-promo",
-      "description": "Barber shop interior cinematic",
-      "imageUrl": "https://picsum.photos/seed/hero-promo/1200/600",
-      "imageHint": "luxury barbershop"
+      "description": "Barber cutting hair close up with comb and clipper",
+      "imageUrl": "https://picsum.photos/seed/barber-work-action/1200/600",
+      "imageHint": "barber haircut"
     }
   ]
 }
