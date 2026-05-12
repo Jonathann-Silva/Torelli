@@ -28,6 +28,7 @@ export default function BarbersAdminPage() {
   const db = useFirestore();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
+  const [activeSettingField, setActiveSettingField] = useState<'interval' | 'cleaning' | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -45,7 +46,8 @@ export default function BarbersAdminPage() {
     cleaningDuration: 10,
     emergencyReservation: true
   });
-  const [tempSettings, setTempSettings] = useState({ ...globalSettings });
+  
+  const [tempValue, setTempValue] = useState<number>(0);
 
   const barbersQuery = useMemo(() => {
     if (!db) return null;
@@ -87,12 +89,22 @@ export default function BarbersAdminPage() {
     }
   };
 
-  const handleSaveGlobalSettings = () => {
-    setGlobalSettings(tempSettings);
+  const openSettingsDialog = (field: 'interval' | 'cleaning') => {
+    setActiveSettingField(field);
+    setTempValue(field === 'interval' ? globalSettings.appointmentInterval : globalSettings.cleaningDuration);
+    setIsSettingsDialogOpen(true);
+  };
+
+  const handleSaveSetting = () => {
+    if (activeSettingField === 'interval') {
+      setGlobalSettings(prev => ({ ...prev, appointmentInterval: tempValue }));
+    } else if (activeSettingField === 'cleaning') {
+      setGlobalSettings(prev => ({ ...prev, cleaningDuration: tempValue }));
+    }
     setIsSettingsDialogOpen(false);
     toast({ 
-      title: "Configurações Salvas", 
-      description: "As pausas e tempos globais foram atualizados com sucesso." 
+      title: "Configuração Atualizada", 
+      description: "O tempo global foi atualizado com sucesso." 
     });
   };
 
@@ -294,74 +306,83 @@ export default function BarbersAdminPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              { key: 'appointmentInterval', label: 'Tempo entre Agendamentos', value: `${globalSettings.appointmentInterval} min`, icon: Scissors },
-              { key: 'cleaningDuration', label: 'Duração de Limpeza', value: `${globalSettings.cleaningDuration} min`, icon: Sparkles },
-              { key: 'emergencyReservation', label: 'Reserva de Emergência', value: globalSettings.emergencyReservation ? 'Ativado' : 'Desativado', icon: Coffee, active: globalSettings.emergencyReservation }
-            ].map((stat, i) => (
-              <div key={i} className="bg-card/50 p-6 rounded-2xl border border-white/5 space-y-4">
-                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">{stat.label}</p>
-                <div className="flex items-center justify-between">
-                  <span className="text-2xl font-black text-primary">{stat.value}</span>
-                  {stat.key === 'emergencyReservation' ? (
-                    <div 
-                      onClick={toggleEmergency}
-                      className={cn(
-                        "w-10 h-5 rounded-full flex items-center px-1 cursor-pointer transition-all duration-300",
-                        globalSettings.emergencyReservation ? "bg-primary justify-end" : "bg-secondary justify-start"
-                      )}
-                    >
-                      <div className="w-3 h-3 bg-primary-foreground rounded-full"></div>
-                    </div>
-                  ) : (
-                    <button 
-                      onClick={() => {
-                        setTempSettings(globalSettings);
-                        setIsSettingsDialogOpen(true);
-                      }}
-                      className="text-muted-foreground hover:text-primary transition-colors focus:outline-none"
-                    >
-                      <Settings size={18} />
-                    </button>
+            {/* Interval Setting Card */}
+            <div className="bg-card/50 p-6 rounded-2xl border border-white/5 space-y-4">
+              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Tempo entre Agendamentos</p>
+              <div className="flex items-center justify-between">
+                <span className="text-2xl font-black text-primary">{globalSettings.appointmentInterval} min</span>
+                <button 
+                  onClick={() => openSettingsDialog('interval')}
+                  className="text-muted-foreground hover:text-primary transition-colors focus:outline-none"
+                >
+                  <Settings size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Cleaning Duration Card */}
+            <div className="bg-card/50 p-6 rounded-2xl border border-white/5 space-y-4">
+              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Duração de Limpeza</p>
+              <div className="flex items-center justify-between">
+                <span className="text-2xl font-black text-primary">{globalSettings.cleaningDuration} min</span>
+                <button 
+                  onClick={() => openSettingsDialog('cleaning')}
+                  className="text-muted-foreground hover:text-primary transition-colors focus:outline-none"
+                >
+                  <Settings size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Emergency Reservation Card */}
+            <div className="bg-card/50 p-6 rounded-2xl border border-white/5 space-y-4">
+              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Reserva de Emergência</p>
+              <div className="flex items-center justify-between">
+                <span className="text-2xl font-black text-primary">{globalSettings.emergencyReservation ? 'Ativado' : 'Desativado'}</span>
+                <div 
+                  onClick={toggleEmergency}
+                  className={cn(
+                    "w-10 h-5 rounded-full flex items-center px-1 cursor-pointer transition-all duration-300",
+                    globalSettings.emergencyReservation ? "bg-primary justify-end" : "bg-secondary justify-start"
                   )}
+                >
+                  <div className="w-3 h-3 bg-primary-foreground rounded-full"></div>
                 </div>
               </div>
-            ))}
+            </div>
           </div>
         </section>
 
-        {/* Global Settings Dialog */}
+        {/* Dynamic Global Settings Dialog */}
         <Dialog open={isSettingsDialogOpen} onOpenChange={setIsSettingsDialogOpen}>
           <DialogContent className="bg-card border-white/10 text-foreground rounded-3xl">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-black tracking-tight text-primary uppercase">Editar Tempos Globais</DialogTitle>
+              <DialogTitle className="text-2xl font-black tracking-tight text-primary uppercase">
+                {activeSettingField === 'interval' ? 'Tempo entre Agendamentos' : 'Duração de Limpeza'}
+              </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Tempo entre Agendamentos (minutos)</Label>
-                <Input 
-                  type="number"
-                  value={tempSettings.appointmentInterval} 
-                  onChange={(e) => setTempSettings({...tempSettings, appointmentInterval: parseInt(e.target.value) || 0})}
-                  className="bg-secondary/50 border-white/5 rounded-xl h-12"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Duração de Limpeza (minutos)</Label>
-                <Input 
-                  type="number"
-                  value={tempSettings.cleaningDuration} 
-                  onChange={(e) => setTempSettings({...tempSettings, cleaningDuration: parseInt(e.target.value) || 0})}
-                  className="bg-secondary/50 border-white/5 rounded-xl h-12"
-                />
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                  {activeSettingField === 'interval' ? 'Minutos entre cada horário' : 'Minutos para higienização'}
+                </Label>
+                <div className="flex items-center gap-4">
+                  <Input 
+                    type="number"
+                    value={tempValue} 
+                    onChange={(e) => setTempValue(parseInt(e.target.value) || 0)}
+                    className="bg-secondary/50 border-white/5 rounded-xl h-12 flex-1"
+                  />
+                  <span className="text-xs font-bold text-muted-foreground">min</span>
+                </div>
               </div>
             </div>
             <DialogFooter>
               <Button 
-                onClick={handleSaveGlobalSettings} 
+                onClick={handleSaveSetting} 
                 className="w-full bg-primary text-primary-foreground font-black uppercase tracking-widest h-14 rounded-2xl"
               >
-                Salvar Alterações
+                Salvar Configuração
               </Button>
             </DialogFooter>
           </DialogContent>
