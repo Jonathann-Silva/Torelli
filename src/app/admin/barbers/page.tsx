@@ -28,7 +28,7 @@ export default function BarbersAdminPage() {
   const db = useFirestore();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
-  const [activeSettingField, setActiveSettingField] = useState<'interval' | 'cleaning' | null>(null);
+  const [activeSettingField, setActiveSettingField] = useState<'interval' | 'cleaning' | 'combo' | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -44,7 +44,7 @@ export default function BarbersAdminPage() {
   const [globalSettings, setGlobalSettings] = useState({
     appointmentInterval: 15,
     cleaningDuration: 10,
-    emergencyReservation: true
+    comboDuration: 60
   });
   
   const [tempValue, setTempValue] = useState<number>(0);
@@ -89,9 +89,11 @@ export default function BarbersAdminPage() {
     }
   };
 
-  const openSettingsDialog = (field: 'interval' | 'cleaning') => {
+  const openSettingsDialog = (field: 'interval' | 'cleaning' | 'combo') => {
     setActiveSettingField(field);
-    setTempValue(field === 'interval' ? globalSettings.appointmentInterval : globalSettings.cleaningDuration);
+    if (field === 'interval') setTempValue(globalSettings.appointmentInterval);
+    else if (field === 'cleaning') setTempValue(globalSettings.cleaningDuration);
+    else if (field === 'combo') setTempValue(globalSettings.comboDuration);
     setIsSettingsDialogOpen(true);
   };
 
@@ -100,22 +102,13 @@ export default function BarbersAdminPage() {
       setGlobalSettings(prev => ({ ...prev, appointmentInterval: tempValue }));
     } else if (activeSettingField === 'cleaning') {
       setGlobalSettings(prev => ({ ...prev, cleaningDuration: tempValue }));
+    } else if (activeSettingField === 'combo') {
+      setGlobalSettings(prev => ({ ...prev, comboDuration: tempValue }));
     }
     setIsSettingsDialogOpen(false);
     toast({ 
       title: "Configuração Atualizada", 
       description: "O tempo global foi atualizado com sucesso." 
-    });
-  };
-
-  const toggleEmergency = () => {
-    setGlobalSettings(prev => ({
-      ...prev,
-      emergencyReservation: !prev.emergencyReservation
-    }));
-    toast({ 
-      title: globalSettings.emergencyReservation ? "Reserva Desativada" : "Reserva Ativada",
-      description: "A configuração de reserva de emergência foi alterada."
     });
   };
 
@@ -334,20 +327,17 @@ export default function BarbersAdminPage() {
               </div>
             </div>
 
-            {/* Emergency Reservation Card */}
+            {/* Combo Duration Card */}
             <div className="bg-card/50 p-6 rounded-2xl border border-white/5 space-y-4">
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Reserva de Emergência</p>
+              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Combo</p>
               <div className="flex items-center justify-between">
-                <span className="text-2xl font-black text-primary">{globalSettings.emergencyReservation ? 'Ativado' : 'Desativado'}</span>
-                <div 
-                  onClick={toggleEmergency}
-                  className={cn(
-                    "w-10 h-5 rounded-full flex items-center px-1 cursor-pointer transition-all duration-300",
-                    globalSettings.emergencyReservation ? "bg-primary justify-end" : "bg-secondary justify-start"
-                  )}
+                <span className="text-2xl font-black text-primary">{globalSettings.comboDuration} min</span>
+                <button 
+                  onClick={() => openSettingsDialog('combo')}
+                  className="text-muted-foreground hover:text-primary transition-colors focus:outline-none"
                 >
-                  <div className="w-3 h-3 bg-primary-foreground rounded-full"></div>
-                </div>
+                  <Settings size={18} />
+                </button>
               </div>
             </div>
           </div>
@@ -358,13 +348,15 @@ export default function BarbersAdminPage() {
           <DialogContent className="bg-card border-white/10 text-foreground rounded-3xl">
             <DialogHeader>
               <DialogTitle className="text-2xl font-black tracking-tight text-primary uppercase">
-                {activeSettingField === 'interval' ? 'Tempo de corte' : 'Tempo de barba'}
+                {activeSettingField === 'interval' ? 'Tempo de corte' : 
+                 activeSettingField === 'cleaning' ? 'Tempo de barba' : 'Tempo do Combo'}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                  {activeSettingField === 'interval' ? 'Minutos entre cada horário' : 'Minutos para a barba'}
+                  {activeSettingField === 'interval' ? 'Minutos entre cada horário' : 
+                   activeSettingField === 'cleaning' ? 'Minutos para a barba' : 'Minutos para Cabelo + Barba'}
                 </Label>
                 <div className="flex items-center gap-4">
                   <Input 
