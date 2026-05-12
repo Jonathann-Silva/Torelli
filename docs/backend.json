@@ -59,6 +59,16 @@
         "break": { "type": "string" }
       },
       "required": ["name", "specialty", "status"]
+    },
+    "GlobalSettings": {
+      "title": "Global Settings",
+      "description": "Global shop configurations like service durations.",
+      "type": "object",
+      "properties": {
+        "appointmentInterval": { "type": "number", "description": "Duration for hair cut in minutes" },
+        "cleaningDuration": { "type": "number", "description": "Duration for beard in minutes" },
+        "comboDuration": { "type": "number", "description": "Duration for combo in minutes" }
+      }
     }
   },
   "auth": {
@@ -80,6 +90,10 @@
     "/barbers/{barberId}": {
       "schema": "Barber",
       "description": "Collection of shop barbers."
+    },
+    "/settings/{settingId}": {
+      "schema": "GlobalSettings",
+      "description": "Global configuration document."
     }
   }
 }

@@ -1,15 +1,15 @@
 
 "use client"
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { UserPlus, Edit3, Settings, Coffee, Scissors, Calendar, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useCollection, useFirestore } from '@/firebase';
-import { collection, addDoc, serverTimestamp, query, orderBy } from 'firebase/firestore';
+import { useCollection, useFirestore, useDoc } from '@/firebase';
+import { collection, addDoc, serverTimestamp, query, orderBy, doc, setDoc } from 'firebase/firestore';
 import { 
   Dialog, 
   DialogContent, 
@@ -40,21 +40,24 @@ export default function BarbersAdminPage() {
     image: 'barber1'
   });
 
-  // Global settings state
-  const [globalSettings, setGlobalSettings] = useState({
-    appointmentInterval: 15,
-    cleaningDuration: 10,
-    comboDuration: 60
-  });
+  // Global settings from Firestore
+  const settingsRef = useMemo(() => doc(db, 'settings', 'global'), [db]);
+  const { data: settingsData, loading: settingsLoading } = useDoc(settingsRef);
   
   const [tempValue, setTempValue] = useState<number>(0);
+
+  const globalSettings = {
+    appointmentInterval: settingsData?.appointmentInterval || 15,
+    cleaningDuration: settingsData?.cleaningDuration || 10,
+    comboDuration: settingsData?.comboDuration || 60
+  };
 
   const barbersQuery = useMemo(() => {
     if (!db) return null;
     return query(collection(db, 'barbers'), orderBy('name', 'asc'));
   }, [db]);
 
-  const { data: barbers = [], loading } = useCollection(barbersQuery);
+  const { data: barbers = [], loading: barbersLoading } = useCollection(barbersQuery);
 
   const handleAddBarber = async () => {
     if (!db) return;
@@ -97,19 +100,29 @@ export default function BarbersAdminPage() {
     setIsSettingsDialogOpen(true);
   };
 
-  const handleSaveSetting = () => {
-    if (activeSettingField === 'interval') {
-      setGlobalSettings(prev => ({ ...prev, appointmentInterval: tempValue }));
-    } else if (activeSettingField === 'cleaning') {
-      setGlobalSettings(prev => ({ ...prev, cleaningDuration: tempValue }));
-    } else if (activeSettingField === 'combo') {
-      setGlobalSettings(prev => ({ ...prev, comboDuration: tempValue }));
+  const handleSaveSetting = async () => {
+    if (!db) return;
+    
+    setIsSaving(true);
+    try {
+      const updatedSettings = { ...globalSettings };
+      if (activeSettingField === 'interval') updatedSettings.appointmentInterval = tempValue;
+      else if (activeSettingField === 'cleaning') updatedSettings.cleaningDuration = tempValue;
+      else if (activeSettingField === 'combo') updatedSettings.comboDuration = tempValue;
+
+      await setDoc(doc(db, 'settings', 'global'), updatedSettings, { merge: true });
+      
+      setIsSettingsDialogOpen(false);
+      toast({ 
+        title: "Configuração Atualizada", 
+        description: "O tempo global foi salvo no banco de dados." 
+      });
+    } catch (error) {
+      console.error(error);
+      toast({ title: "Erro", description: "Não foi possível salvar a configuração.", variant: "destructive" });
+    } finally {
+      setIsSaving(false);
     }
-    setIsSettingsDialogOpen(false);
-    toast({ 
-      title: "Configuração Atualizada", 
-      description: "O tempo global foi atualizado com sucesso." 
-    });
   };
 
   return (
@@ -201,7 +214,7 @@ export default function BarbersAdminPage() {
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {loading ? (
+          {barbersLoading ? (
             <div className="col-span-full flex justify-center py-20">
               <Loader2 className="animate-spin text-primary" size={48} />
             </div>
@@ -298,49 +311,55 @@ export default function BarbersAdminPage() {
             <h4 className="text-2xl font-black text-white tracking-tight">Configurações de Pausa Global</h4>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Interval Setting Card */}
-            <div className="bg-card/50 p-6 rounded-2xl border border-white/5 space-y-4">
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Tempo de corte</p>
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-black text-primary">{globalSettings.appointmentInterval} min</span>
-                <button 
-                  onClick={() => openSettingsDialog('interval')}
-                  className="text-muted-foreground hover:text-primary transition-colors focus:outline-none"
-                >
-                  <Settings size={18} />
-                </button>
-              </div>
+          {settingsLoading ? (
+            <div className="flex justify-center py-10">
+              <Loader2 className="animate-spin text-primary" />
             </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Interval Setting Card */}
+              <div className="bg-card/50 p-6 rounded-2xl border border-white/5 space-y-4">
+                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Tempo de corte</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl font-black text-primary">{globalSettings.appointmentInterval} min</span>
+                  <button 
+                    onClick={() => openSettingsDialog('interval')}
+                    className="text-muted-foreground hover:text-primary transition-colors focus:outline-none"
+                  >
+                    <Settings size={18} />
+                  </button>
+                </div>
+              </div>
 
-            {/* Cleaning Duration Card */}
-            <div className="bg-card/50 p-6 rounded-2xl border border-white/5 space-y-4">
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Tempo de barba</p>
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-black text-primary">{globalSettings.cleaningDuration} min</span>
-                <button 
-                  onClick={() => openSettingsDialog('cleaning')}
-                  className="text-muted-foreground hover:text-primary transition-colors focus:outline-none"
-                >
-                  <Settings size={18} />
-                </button>
+              {/* Cleaning Duration Card */}
+              <div className="bg-card/50 p-6 rounded-2xl border border-white/5 space-y-4">
+                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Tempo de barba</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl font-black text-primary">{globalSettings.cleaningDuration} min</span>
+                  <button 
+                    onClick={() => openSettingsDialog('cleaning')}
+                    className="text-muted-foreground hover:text-primary transition-colors focus:outline-none"
+                  >
+                    <Settings size={18} />
+                  </button>
+                </div>
               </div>
-            </div>
 
-            {/* Combo Duration Card */}
-            <div className="bg-card/50 p-6 rounded-2xl border border-white/5 space-y-4">
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Combo</p>
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-black text-primary">{globalSettings.comboDuration} min</span>
-                <button 
-                  onClick={() => openSettingsDialog('combo')}
-                  className="text-muted-foreground hover:text-primary transition-colors focus:outline-none"
-                >
-                  <Settings size={18} />
-                </button>
+              {/* Combo Duration Card */}
+              <div className="bg-card/50 p-6 rounded-2xl border border-white/5 space-y-4">
+                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Combo</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl font-black text-primary">{globalSettings.comboDuration} min</span>
+                  <button 
+                    onClick={() => openSettingsDialog('combo')}
+                    className="text-muted-foreground hover:text-primary transition-colors focus:outline-none"
+                  >
+                    <Settings size={18} />
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </section>
 
         {/* Dynamic Global Settings Dialog */}
@@ -372,9 +391,10 @@ export default function BarbersAdminPage() {
             <DialogFooter>
               <Button 
                 onClick={handleSaveSetting} 
+                disabled={isSaving}
                 className="w-full bg-primary text-primary-foreground font-black uppercase tracking-widest h-14 rounded-2xl"
               >
-                Salvar Configuração
+                {isSaving ? <Loader2 className="animate-spin" /> : "Salvar Configuração"}
               </Button>
             </DialogFooter>
           </DialogContent>
