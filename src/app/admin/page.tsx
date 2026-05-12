@@ -83,69 +83,92 @@ export default function AdminDashboard() {
     .reduce((acc: number, curr: any) => acc + (Number(curr.price) || 0), 0);
 
   return (
-    <div className="min-h-screen pb-32 bg-black">
+    <div className="min-h-screen pb-32">
       <Header />
       
-      <main className="pt-20 px-5 space-y-10">
+      <main className="pt-24 px-5 space-y-10 max-w-container-max mx-auto">
         <section className="space-y-1">
-          <h2 className="text-2xl font-black text-white tracking-tighter">Visão Geral</h2>
-          <p className="text-muted-foreground text-[11px] font-bold uppercase tracking-widest">Painel Administrativo</p>
+          <h2 className="text-4xl font-black text-white tracking-tighter">Visão Geral</h2>
+          <p className="text-muted-foreground text-sm font-medium">Painel Administrativo da Barbearia</p>
         </section>
 
         <section className="grid grid-cols-1 gap-4">
-          <div className="premium-card p-6 rounded-3xl bg-primary/5 border-primary/10">
-            <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Receita (Recente)</span>
-            <h3 className="text-3xl font-black text-primary mt-1">R$ {totalRevenue.toFixed(2)}</h3>
+          <div className="premium-card p-8 rounded-3xl bg-primary/5 border-primary/20 amber-glow">
+            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Receita Total (Concluídos)</span>
+            <h3 className="text-4xl font-black text-primary mt-2">R$ {totalRevenue.toFixed(2)}</h3>
           </div>
         </section>
 
-        <section className="space-y-4">
-          <h2 className="text-lg font-black text-white tracking-tight leading-none">Gestão de Agendamentos</h2>
+        <section className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-black text-white tracking-tight">Gestão de Agendamentos</h2>
+            <div className="bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
+              <span className="text-[10px] font-black text-primary uppercase tracking-widest">Tempo Real</span>
+            </div>
+          </div>
           
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-4">
             {loading ? (
-              <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
-            ) : appointments.map((apt: any) => {
-              const isPending = apt.status === 'pending';
-              const isConfirmed = apt.status === 'confirmed';
+              <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary" size={40} /></div>
+            ) : appointments.length > 0 ? (
+              appointments.map((apt: any) => {
+                const isPending = apt.status === 'pending';
+                const isConfirmed = apt.status === 'confirmed';
 
-              return (
-                <div key={apt.id} className="premium-card p-4 rounded-2xl flex flex-col gap-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-secondary relative overflow-hidden">
-                        <Image src={PlaceHolderImages.find(i => i.id === 'client1')?.imageUrl || ''} alt="C" fill className="object-cover" />
+                return (
+                  <div key={apt.id} className="premium-card p-6 rounded-3xl flex flex-col gap-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-2xl bg-secondary relative overflow-hidden border border-white/5">
+                          <Image src={PlaceHolderImages.find(i => i.id === 'client1')?.imageUrl || ''} alt="C" fill className="object-cover" />
+                        </div>
+                        <div>
+                          <h4 className="font-black text-lg text-foreground leading-none">{apt.clientName}</h4>
+                          <p className="text-xs text-muted-foreground mt-2">{apt.date} às {apt.time}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-bold text-xs text-foreground">{apt.clientName}</h4>
-                        <p className="text-[9px] text-muted-foreground">{apt.date} às {apt.time}</p>
-                      </div>
+                      <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${apt.status === 'pending' ? 'bg-primary/20 text-primary border-primary/20 animate-pulse' : 'bg-secondary/30 text-muted-foreground border-white/5'}`}>
+                        {apt.status}
+                      </span>
                     </div>
-                    <span className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest border ${apt.status === 'pending' ? 'bg-primary/20 text-primary border-primary/20' : 'bg-secondary/30 text-muted-foreground border-white/5'}`}>
-                      {apt.status}
-                    </span>
-                  </div>
 
-                  <div className="flex gap-2">
-                    {isPending && (
-                      <>
-                        <Button size="sm" onClick={() => handleUpdateStatus(apt, 'confirmed')} className="flex-1 h-8 bg-primary text-primary-foreground text-[8px] font-black uppercase tracking-widest">
-                          Aceitar
+                    <div className="h-px bg-white/5"></div>
+
+                    <div className="flex gap-3">
+                      {isPending && (
+                        <>
+                          <Button 
+                            onClick={() => handleUpdateStatus(apt, 'confirmed')} 
+                            className="flex-1 h-12 bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-widest rounded-xl amber-glow"
+                          >
+                            Aceitar Agendamento
+                          </Button>
+                          <Button 
+                            onClick={() => handleUpdateStatus(apt, 'cancelled')} 
+                            variant="outline" 
+                            className="flex-1 h-12 border-destructive/20 text-destructive text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-destructive/5"
+                          >
+                            Recusar
+                          </Button>
+                        </>
+                      )}
+                      {isConfirmed && (
+                        <Button 
+                          onClick={() => handleUpdateStatus(apt, 'completed')} 
+                          className="w-full h-12 bg-green-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-green-700 shadow-lg shadow-green-900/20"
+                        >
+                          Concluir Atendimento
                         </Button>
-                        <Button size="sm" onClick={() => handleUpdateStatus(apt, 'cancelled')} variant="outline" className="flex-1 h-8 border-destructive/20 text-destructive text-[8px] font-black uppercase tracking-widest">
-                          Recusar
-                        </Button>
-                      </>
-                    )}
-                    {isConfirmed && (
-                      <Button size="sm" onClick={() => handleUpdateStatus(apt, 'completed')} className="w-full h-8 bg-green-600 text-white text-[8px] font-black uppercase tracking-widest hover:bg-green-700">
-                        Concluir Atendimento
-                      </Button>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            ) : (
+              <div className="py-20 text-center opacity-30">
+                <p className="font-black uppercase tracking-widest">Nenhum agendamento encontrado</p>
+              </div>
+            )}
           </div>
         </section>
       </main>
