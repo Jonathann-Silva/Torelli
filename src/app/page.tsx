@@ -57,7 +57,7 @@ export default function HomePage() {
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-black text-white">Categorias</h3>
-            <span className="text-primary text-[10px] font-bold uppercase tracking-widest cursor-pointer hover:underline">Ver tudo</span>
+            <span className="text-primary text-[10px] font-bold uppercase tracking widest cursor-pointer hover:underline">Ver tudo</span>
           </div>
           <div className="grid grid-cols-3 gap-3">
             {[

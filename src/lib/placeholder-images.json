@@ -56,9 +56,9 @@
     },
     {
       "id": "hero-promo",
-      "description": "Barber cutting hair close up with comb and clipper",
-      "imageUrl": "https://picsum.photos/seed/barber-work-action/1200/600",
-      "imageHint": "barber haircut"
+      "description": "Barber cutting hair with precision",
+      "imageUrl": "https://picsum.photos/seed/barber-cutting-hair/1200/600",
+      "imageHint": "barber cutting"
     }
   ]
 }
