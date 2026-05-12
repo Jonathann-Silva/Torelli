@@ -322,7 +322,7 @@ export default function BarbersAdminPage() {
 
             {/* Cleaning Duration Card */}
             <div className="bg-card/50 p-6 rounded-2xl border border-white/5 space-y-4">
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Duração de Limpeza</p>
+              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Tempo de barba</p>
               <div className="flex items-center justify-between">
                 <span className="text-2xl font-black text-primary">{globalSettings.cleaningDuration} min</span>
                 <button 
@@ -358,13 +358,13 @@ export default function BarbersAdminPage() {
           <DialogContent className="bg-card border-white/10 text-foreground rounded-3xl">
             <DialogHeader>
               <DialogTitle className="text-2xl font-black tracking-tight text-primary uppercase">
-                {activeSettingField === 'interval' ? 'Tempo de corte' : 'Duração de Limpeza'}
+                {activeSettingField === 'interval' ? 'Tempo de corte' : 'Tempo de barba'}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                  {activeSettingField === 'interval' ? 'Minutos entre cada horário' : 'Minutos para higienização'}
+                  {activeSettingField === 'interval' ? 'Minutos entre cada horário' : 'Minutos para a barba'}
                 </Label>
                 <div className="flex items-center gap-4">
                   <Input 
