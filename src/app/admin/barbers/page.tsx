@@ -308,7 +308,7 @@ export default function BarbersAdminPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Interval Setting Card */}
             <div className="bg-card/50 p-6 rounded-2xl border border-white/5 space-y-4">
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Tempo entre Agendamentos</p>
+              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Tempo de corte</p>
               <div className="flex items-center justify-between">
                 <span className="text-2xl font-black text-primary">{globalSettings.appointmentInterval} min</span>
                 <button 
@@ -358,7 +358,7 @@ export default function BarbersAdminPage() {
           <DialogContent className="bg-card border-white/10 text-foreground rounded-3xl">
             <DialogHeader>
               <DialogTitle className="text-2xl font-black tracking-tight text-primary uppercase">
-                {activeSettingField === 'interval' ? 'Tempo entre Agendamentos' : 'Duração de Limpeza'}
+                {activeSettingField === 'interval' ? 'Tempo de corte' : 'Duração de Limpeza'}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
