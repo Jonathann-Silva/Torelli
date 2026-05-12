@@ -9,7 +9,7 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { UserPlus, Edit3, Settings, Coffee, Scissors, Calendar, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCollection, useFirestore, useDoc } from '@/firebase';
-import { collection, addDoc, serverTimestamp, query, orderBy, doc, setDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, orderBy, doc, setDoc, updateDoc } from 'firebase/firestore';
 import { 
   Dialog, 
   DialogContent, 
@@ -30,6 +30,7 @@ export default function BarbersAdminPage() {
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
   const [activeSettingField, setActiveSettingField] = useState<'interval' | 'cleaning' | 'combo' | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [editingBarberId, setEditingBarberId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -59,7 +60,33 @@ export default function BarbersAdminPage() {
 
   const { data: barbers = [], loading: barbersLoading } = useCollection(barbersQuery);
 
-  const handleAddBarber = async () => {
+  const handleOpenAdd = () => {
+    setEditingBarberId(null);
+    setFormData({
+      name: '',
+      specialty: '',
+      schedule: 'Seg - Sex, 09:00 - 19:00',
+      break: '12:30 - 13:30',
+      status: 'active',
+      image: 'barber1'
+    });
+    setIsAddDialogOpen(true);
+  };
+
+  const handleOpenEdit = (barber: any) => {
+    setEditingBarberId(barber.id);
+    setFormData({
+      name: barber.name,
+      specialty: barber.specialty,
+      schedule: barber.schedule,
+      break: barber.break,
+      status: barber.status,
+      image: barber.image
+    });
+    setIsAddDialogOpen(true);
+  };
+
+  const handleSaveBarber = async () => {
     if (!db) return;
     if (!formData.name || !formData.specialty) {
       toast({ title: "Erro", description: "Nome e especialidade são obrigatórios.", variant: "destructive" });
@@ -68,25 +95,24 @@ export default function BarbersAdminPage() {
 
     setIsSaving(true);
     try {
-      addDoc(collection(db, 'barbers'), {
-        ...formData,
-        createdAt: serverTimestamp()
-      });
+      if (editingBarberId) {
+        await updateDoc(doc(db, 'barbers', editingBarberId), {
+          ...formData,
+          updatedAt: serverTimestamp()
+        });
+        toast({ title: "Sucesso", description: "Barbeiro atualizado com sucesso!" });
+      } else {
+        await addDoc(collection(db, 'barbers'), {
+          ...formData,
+          createdAt: serverTimestamp()
+        });
+        toast({ title: "Sucesso", description: "Barbeiro adicionado com sucesso!" });
+      }
       
       setIsAddDialogOpen(false);
-      setFormData({
-        name: '',
-        specialty: '',
-        schedule: 'Seg - Sex, 09:00 - 19:00',
-        break: '12:30 - 13:30',
-        status: 'active',
-        image: 'barber1'
-      });
-      
-      toast({ title: "Sucesso", description: "Barbeiro adicionado com sucesso!" });
     } catch (error) {
       console.error(error);
-      toast({ title: "Erro", description: "Não foi possível adicionar o barbeiro.", variant: "destructive" });
+      toast({ title: "Erro", description: "Não foi possível salvar o barbeiro.", variant: "destructive" });
     } finally {
       setIsSaving(false);
     }
@@ -138,14 +164,16 @@ export default function BarbersAdminPage() {
 
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-primary text-primary-foreground h-12 px-8 rounded-xl font-black uppercase tracking-widest amber-glow shadow-2xl">
+              <Button onClick={handleOpenAdd} className="bg-primary text-primary-foreground h-12 px-8 rounded-xl font-black uppercase tracking-widest amber-glow shadow-2xl">
                 <UserPlus size={20} className="mr-2" />
                 Adicionar Barbeiro
               </Button>
             </DialogTrigger>
             <DialogContent className="bg-card border-white/10 text-foreground rounded-3xl">
               <DialogHeader>
-                <DialogTitle className="text-2xl font-black tracking-tight text-primary uppercase">Novo Barbeiro</DialogTitle>
+                <DialogTitle className="text-2xl font-black tracking-tight text-primary uppercase">
+                  {editingBarberId ? "Editar Barbeiro" : "Novo Barbeiro"}
+                </DialogTitle>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
@@ -187,8 +215,20 @@ export default function BarbersAdminPage() {
                   </div>
                 </div>
                 <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Status</Label>
+                  <Select onValueChange={(val: any) => setFormData({...formData, status: val})} value={formData.status}>
+                    <SelectTrigger className="bg-secondary/50 border-white/5 rounded-xl h-12">
+                      <SelectValue placeholder="Status do barbeiro" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-white/10">
+                      <SelectItem value="active">Ativo</SelectItem>
+                      <SelectItem value="inactive">Inativo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
                   <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Avatar de Referência</Label>
-                  <Select onValueChange={(val) => setFormData({...formData, image: val})} defaultValue={formData.image}>
+                  <Select onValueChange={(val) => setFormData({...formData, image: val})} value={formData.image}>
                     <SelectTrigger className="bg-secondary/50 border-white/5 rounded-xl h-12">
                       <SelectValue placeholder="Selecione um avatar" />
                     </SelectTrigger>
@@ -202,11 +242,11 @@ export default function BarbersAdminPage() {
               </div>
               <DialogFooter>
                 <Button 
-                  onClick={handleAddBarber} 
+                  onClick={handleSaveBarber} 
                   disabled={isSaving}
                   className="w-full bg-primary text-primary-foreground font-black uppercase tracking-widest h-14 rounded-2xl"
                 >
-                  {isSaving ? <Loader2 className="animate-spin" /> : "Salvar Barbeiro"}
+                  {isSaving ? <Loader2 className="animate-spin" /> : (editingBarberId ? "Atualizar" : "Salvar Barbeiro")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -249,8 +289,11 @@ export default function BarbersAdminPage() {
                         </div>
                       </div>
                     </div>
-                    <button className="text-muted-foreground hover:text-primary transition-colors">
-                      {isActive ? <Edit3 size={20} /> : <Settings size={20} />}
+                    <button 
+                      onClick={() => handleOpenEdit(barber)}
+                      className="text-muted-foreground hover:text-primary transition-colors focus:outline-none"
+                    >
+                      <Edit3 size={20} />
                     </button>
                   </div>
 
@@ -280,16 +323,10 @@ export default function BarbersAdminPage() {
                       })}
                     </div>
 
-                    {isActive ? (
-                      <div className="flex items-center gap-3 bg-secondary/30 p-4 rounded-2xl border border-white/5">
-                        <Coffee size={18} className="text-primary" />
-                        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Intervalo: {barber.break}</span>
-                      </div>
-                    ) : (
-                      <Button variant="outline" className="w-full h-12 rounded-2xl border-dashed border-white/10 text-muted-foreground hover:text-primary hover:border-primary/50 text-xs font-bold uppercase tracking-widest">
-                        Configurar Horários
-                      </Button>
-                    )}
+                    <div className="flex items-center gap-3 bg-secondary/30 p-4 rounded-2xl border border-white/5">
+                      <Coffee size={18} className="text-primary" />
+                      <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Intervalo: {barber.break}</span>
+                    </div>
                   </div>
                 </div>
               );
