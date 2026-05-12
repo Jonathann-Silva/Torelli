@@ -174,7 +174,7 @@ export default function BarbersAdminPage() {
       <Header />
       
       <main className="pt-24 pb-32 px-4 md:px-margin max-w-container-max mx-auto space-y-12">
-        <header className="flex flex-col md:flex-row justify-between items-end gap-6">
+        <header className="flex flex-col items-center text-center gap-6">
           <div className="space-y-1">
             <h2 className="text-4xl font-black text-white tracking-tighter">Gestão de Barbeiros</h2>
             <p className="text-muted-foreground text-sm font-medium">Gerencie sua equipe, horários e disponibilidade.</p>
