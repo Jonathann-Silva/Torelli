@@ -77,7 +77,7 @@ export const Header = () => {
               <ShieldCheck size={18} />
             </div>
             <Link href="/admin">
-              <h1 className="font-headline text-lg font-black tracking-tighter text-white leading-none">ADMIN <span className="text-primary">TA</span></h1>
+              <h1 className="font-headline text-lg font-black tracking-tighter text-white leading-none">ADMIN <span className="text-primary">Torelli</span></h1>
             </Link>
           </div>
         ) : (
