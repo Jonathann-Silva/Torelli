@@ -22,10 +22,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 export default function BarbersAdminPage() {
   const db = useFirestore();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -36,6 +38,14 @@ export default function BarbersAdminPage() {
     status: 'active',
     image: 'barber1'
   });
+
+  // Global settings state
+  const [globalSettings, setGlobalSettings] = useState({
+    appointmentInterval: 15,
+    cleaningDuration: 10,
+    emergencyReservation: true
+  });
+  const [tempSettings, setTempSettings] = useState({ ...globalSettings });
 
   const barbersQuery = useMemo(() => {
     if (!db) return null;
@@ -75,6 +85,26 @@ export default function BarbersAdminPage() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleSaveGlobalSettings = () => {
+    setGlobalSettings(tempSettings);
+    setIsSettingsDialogOpen(false);
+    toast({ 
+      title: "Configurações Salvas", 
+      description: "As pausas e tempos globais foram atualizados com sucesso." 
+    });
+  };
+
+  const toggleEmergency = () => {
+    setGlobalSettings(prev => ({
+      ...prev,
+      emergencyReservation: !prev.emergencyReservation
+    }));
+    toast({ 
+      title: globalSettings.emergencyReservation ? "Reserva Desativada" : "Reserva Ativada",
+      description: "A configuração de reserva de emergência foi alterada."
+    });
   };
 
   return (
@@ -265,26 +295,77 @@ export default function BarbersAdminPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { label: 'Tempo entre Agendamentos', value: '15 min', icon: Scissors },
-              { label: 'Duração de Limpeza', value: '10 min', icon: Sparkles },
-              { label: 'Reserva de Emergência', value: 'Ativado', icon: Coffee, active: true }
+              { key: 'appointmentInterval', label: 'Tempo entre Agendamentos', value: `${globalSettings.appointmentInterval} min`, icon: Scissors },
+              { key: 'cleaningDuration', label: 'Duração de Limpeza', value: `${globalSettings.cleaningDuration} min`, icon: Sparkles },
+              { key: 'emergencyReservation', label: 'Reserva de Emergência', value: globalSettings.emergencyReservation ? 'Ativado' : 'Desativado', icon: Coffee, active: globalSettings.emergencyReservation }
             ].map((stat, i) => (
               <div key={i} className="bg-card/50 p-6 rounded-2xl border border-white/5 space-y-4">
                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">{stat.label}</p>
                 <div className="flex items-center justify-between">
                   <span className="text-2xl font-black text-primary">{stat.value}</span>
-                  {stat.active ? (
-                    <div className="w-10 h-5 bg-primary rounded-full flex items-center justify-end px-1 cursor-pointer">
+                  {stat.key === 'emergencyReservation' ? (
+                    <div 
+                      onClick={toggleEmergency}
+                      className={cn(
+                        "w-10 h-5 rounded-full flex items-center px-1 cursor-pointer transition-all duration-300",
+                        globalSettings.emergencyReservation ? "bg-primary justify-end" : "bg-secondary justify-start"
+                      )}
+                    >
                       <div className="w-3 h-3 bg-primary-foreground rounded-full"></div>
                     </div>
                   ) : (
-                    <Settings className="text-muted-foreground cursor-pointer" size={18} />
+                    <button 
+                      onClick={() => {
+                        setTempSettings(globalSettings);
+                        setIsSettingsDialogOpen(true);
+                      }}
+                      className="text-muted-foreground hover:text-primary transition-colors focus:outline-none"
+                    >
+                      <Settings size={18} />
+                    </button>
                   )}
                 </div>
               </div>
             ))}
           </div>
         </section>
+
+        {/* Global Settings Dialog */}
+        <Dialog open={isSettingsDialogOpen} onOpenChange={setIsSettingsDialogOpen}>
+          <DialogContent className="bg-card border-white/10 text-foreground rounded-3xl">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-black tracking-tight text-primary uppercase">Editar Tempos Globais</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Tempo entre Agendamentos (minutos)</Label>
+                <Input 
+                  type="number"
+                  value={tempSettings.appointmentInterval} 
+                  onChange={(e) => setTempSettings({...tempSettings, appointmentInterval: parseInt(e.target.value) || 0})}
+                  className="bg-secondary/50 border-white/5 rounded-xl h-12"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Duração de Limpeza (minutos)</Label>
+                <Input 
+                  type="number"
+                  value={tempSettings.cleaningDuration} 
+                  onChange={(e) => setTempSettings({...tempSettings, cleaningDuration: parseInt(e.target.value) || 0})}
+                  className="bg-secondary/50 border-white/5 rounded-xl h-12"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button 
+                onClick={handleSaveGlobalSettings} 
+                className="w-full bg-primary text-primary-foreground font-black uppercase tracking-widest h-14 rounded-2xl"
+              >
+                Salvar Alterações
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main>
 
       <BottomNav />
