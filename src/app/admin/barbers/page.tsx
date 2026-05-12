@@ -1,12 +1,12 @@
 
 "use client"
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { UserPlus, Edit3, Settings, Coffee, Scissors, Calendar, Sparkles, Loader2 } from 'lucide-react';
+import { UserPlus, Edit3, Settings, Coffee, Scissors, Calendar, Sparkles, Loader2, Camera, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCollection, useFirestore, useDoc } from '@/firebase';
 import { collection, addDoc, serverTimestamp, query, orderBy, doc, setDoc, updateDoc } from 'firebase/firestore';
@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils';
 
 export default function BarbersAdminPage() {
   const db = useFirestore();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
   const [activeSettingField, setActiveSettingField] = useState<'interval' | 'cleaning' | 'combo' | null>(null);
@@ -84,6 +85,17 @@ export default function BarbersAdminPage() {
       image: barber.image
     });
     setIsAddDialogOpen(true);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData({ ...formData, image: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSaveBarber = async () => {
@@ -151,6 +163,12 @@ export default function BarbersAdminPage() {
     }
   };
 
+  const getBarberImage = (imageKey: string) => {
+    if (imageKey.startsWith('data:') || imageKey.startsWith('http')) return imageKey;
+    const found = PlaceHolderImages.find(img => img.id === imageKey);
+    return found?.imageUrl || PlaceHolderImages[0].imageUrl;
+  };
+
   return (
     <div className="min-h-screen">
       <Header />
@@ -176,6 +194,35 @@ export default function BarbersAdminPage() {
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-4 py-4">
+                <div className="space-y-2 flex flex-col items-center pb-2">
+                  <div 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="group relative w-24 h-24 rounded-2xl bg-secondary/50 border-2 border-dashed border-white/10 flex items-center justify-center overflow-hidden cursor-pointer hover:border-primary/50 transition-colors"
+                  >
+                    {formData.image ? (
+                      <Image 
+                        src={getBarberImage(formData.image)} 
+                        alt="Preview" 
+                        fill 
+                        className="object-cover" 
+                      />
+                    ) : (
+                      <Camera className="text-muted-foreground group-hover:text-primary" size={24} />
+                    )}
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Sparkles size={16} className="text-white" />
+                    </div>
+                  </div>
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-primary mt-2">Alterar Foto</Label>
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    accept="image/*" 
+                    onChange={handleFileChange} 
+                  />
+                </div>
+
                 <div className="space-y-2">
                   <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nome do Profissional</Label>
                   <Input 
@@ -226,19 +273,6 @@ export default function BarbersAdminPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Avatar de Referência</Label>
-                  <Select onValueChange={(val) => setFormData({...formData, image: val})} value={formData.image}>
-                    <SelectTrigger className="bg-secondary/50 border-white/5 rounded-xl h-12">
-                      <SelectValue placeholder="Selecione um avatar" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card border-white/10">
-                      <SelectItem value="barber1">Avatar Clássico</SelectItem>
-                      <SelectItem value="barber2">Avatar Moderno</SelectItem>
-                      <SelectItem value="barber3">Avatar Sênior</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
               <DialogFooter>
                 <Button 
@@ -260,7 +294,7 @@ export default function BarbersAdminPage() {
             </div>
           ) : barbers.length > 0 ? (
             barbers.map((barber: any) => {
-              const bImg = PlaceHolderImages.find(img => img.id === barber.image);
+              const barberImg = getBarberImage(barber.image);
               const isActive = barber.status === 'active';
               
               return (
@@ -268,15 +302,12 @@ export default function BarbersAdminPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-6">
                       <div className={`w-24 h-24 rounded-2xl overflow-hidden relative border-2 ${isActive ? 'border-primary/20 shadow-xl shadow-primary/10' : 'border-white/10 grayscale'}`}>
-                        {bImg && (
-                          <Image 
-                            src={bImg.imageUrl} 
-                            alt={barber.name} 
-                            fill 
-                            className="object-cover"
-                            data-ai-hint={bImg.imageHint}
-                          />
-                        )}
+                        <Image 
+                          src={barberImg} 
+                          alt={barber.name} 
+                          fill 
+                          className="object-cover"
+                        />
                       </div>
                       <div className="space-y-1">
                         <h3 className={`text-2xl font-black tracking-tight ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>{barber.name}</h3>
@@ -354,7 +385,6 @@ export default function BarbersAdminPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Interval Setting Card */}
               <div className="bg-card/50 p-6 rounded-2xl border border-white/5 space-y-4">
                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Tempo de corte</p>
                 <div className="flex items-center justify-between">
@@ -368,7 +398,6 @@ export default function BarbersAdminPage() {
                 </div>
               </div>
 
-              {/* Cleaning Duration Card */}
               <div className="bg-card/50 p-6 rounded-2xl border border-white/5 space-y-4">
                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Tempo de barba</p>
                 <div className="flex items-center justify-between">
@@ -382,7 +411,6 @@ export default function BarbersAdminPage() {
                 </div>
               </div>
 
-              {/* Combo Duration Card */}
               <div className="bg-card/50 p-6 rounded-2xl border border-white/5 space-y-4">
                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Combo</p>
                 <div className="flex items-center justify-between">
@@ -399,7 +427,6 @@ export default function BarbersAdminPage() {
           )}
         </section>
 
-        {/* Dynamic Global Settings Dialog */}
         <Dialog open={isSettingsDialogOpen} onOpenChange={setIsSettingsDialogOpen}>
           <DialogContent className="bg-card border-white/10 text-foreground rounded-3xl">
             <DialogHeader>
