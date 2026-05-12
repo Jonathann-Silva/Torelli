@@ -115,7 +115,7 @@ export default function BarbersAdminPage() {
       setIsSettingsDialogOpen(false);
       toast({ 
         title: "Configuração Atualizada", 
-        description: "O tempo global foi salvo no banco de dados." 
+        description: "o tempo foi salvo" 
       });
     } catch (error) {
       console.error(error);
