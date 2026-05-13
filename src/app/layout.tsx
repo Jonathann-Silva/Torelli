@@ -1,8 +1,8 @@
-
 import type {Metadata} from 'next';
 import './globals.css';
 import { FirebaseClientProvider } from '@/firebase';
 import { Toaster } from '@/components/ui/toaster';
+import { NotificationHandler } from '@/components/NotificationHandler';
 
 export const metadata: Metadata = {
   title: 'Torelli Agendamentos | Premium Barbershop',
@@ -26,6 +26,7 @@ export default function RootLayout({
         <FirebaseClientProvider>
           {/* Mobile Container Frame for Desktop Viewport */}
           <div className="max-w-[480px] mx-auto min-h-screen bg-background shadow-[0_0_50px_rgba(0,0,0,0.5)] relative overflow-x-hidden">
+            <NotificationHandler />
             {children}
             <Toaster />
           </div>

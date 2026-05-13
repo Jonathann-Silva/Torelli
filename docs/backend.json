@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "Appointment": {
@@ -43,7 +42,8 @@
         "phone": { "type": "string" },
         "photoURL": { "type": "string" },
         "updatedAt": { "type": "string", "format": "date-time" },
-        "loyaltyPoints": { "type": "number", "description": "Current points in the loyalty cycle" }
+        "loyaltyPoints": { "type": "number", "description": "Current points in the loyalty cycle" },
+        "fcmToken": { "type": "string", "description": "Firebase Cloud Messaging token for push notifications" }
       }
     },
     "Barber": {
