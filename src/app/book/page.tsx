@@ -34,6 +34,16 @@ export default function BookPage() {
   const barbersQuery = useMemo(() => db ? query(collection(db, 'barbers'), orderBy('name')) : null, [db]);
   const { data: barbers = [], loading: barbersLoading } = useCollection(barbersQuery);
 
+  // Auto-select barber if only one is active
+  useEffect(() => {
+    if (!barbersLoading && barbers.length > 0) {
+      const activeBarbers = barbers.filter((b: any) => b.status === 'active');
+      if (activeBarbers.length === 1) {
+        setSelectedBarber(activeBarbers[0]);
+      }
+    }
+  }, [barbers, barbersLoading]);
+
   // Fetch Global Settings
   const settingsRef = useMemo(() => db ? doc(db, 'settings', 'global') : null, [db]);
   const { data: settings } = useDoc(settingsRef);
@@ -93,7 +103,6 @@ export default function BookPage() {
       // Check if time has already passed (if today)
       let isPast = false;
       if (isToday) {
-        // Comparison includes a small buffer (5 minutes) or just strict before
         isPast = isBefore(current, now);
       }
 
