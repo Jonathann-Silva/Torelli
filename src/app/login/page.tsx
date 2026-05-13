@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useEffect } from 'react';
@@ -20,10 +19,14 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  // Redireciona se já estiver logado
+  // Redirecionamento automático se o usuário já estiver logado
   useEffect(() => {
     if (!userLoading && user) {
-      router.push('/');
+      if (user.email === 'admin@gmail.com') {
+        router.push('/admin');
+      } else {
+        router.push('/');
+      }
     }
   }, [user, userLoading, router]);
 
@@ -32,12 +35,20 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const loggedUser = userCredential.user;
+      
       toast({
-        title: "Bem-vindo de volta!",
+        title: "Bem-vindo!",
         description: "Login realizado com sucesso.",
       });
-      router.push('/');
+
+      // Redireciona imediatamente após o login bem-sucedido baseado no e-mail
+      if (loggedUser.email === 'admin@gmail.com') {
+        router.push('/admin');
+      } else {
+        router.push('/');
+      }
     } catch (error: any) {
       console.error(error);
       let message = "E-mail ou senha incorretos.";
