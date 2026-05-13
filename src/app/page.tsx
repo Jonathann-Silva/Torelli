@@ -1,19 +1,33 @@
 
 "use client"
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import Image from 'next/image';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Scissors, Zap, Sparkles, Clock } from 'lucide-react';
+import { Scissors, Zap, Sparkles, Clock, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { SERVICES } from '@/lib/mock-data';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useCollection } from '@/firebase';
+import { collection, query, limit, orderBy } from 'firebase/firestore';
 
 export default function HomePage() {
   const { user } = useUser();
+  const db = useFirestore();
   const heroImg = PlaceHolderImages.find(img => img.id === 'hero-promo');
+
+  const servicesQuery = useMemo(() => {
+    if (!db) return null;
+    return query(collection(db, 'services'), limit(6));
+  }, [db]);
+
+  const { data: services = [], loading: servicesLoading } = useCollection(servicesQuery);
+
+  const getServiceImage = (imageKey: string) => {
+    if (imageKey?.startsWith('data:') || imageKey?.startsWith('http')) return imageKey;
+    const found = PlaceHolderImages.find(img => img.id === imageKey);
+    return found?.imageUrl || PlaceHolderImages[0].imageUrl;
+  };
 
   return (
     <div className="min-h-screen pb-32">
@@ -81,37 +95,44 @@ export default function HomePage() {
             <h3 className="text-lg font-black text-white">Mais Pedidos</h3>
           </div>
           <div className="space-y-4">
-            {SERVICES.slice(0, 3).map((service) => {
-              const sImg = PlaceHolderImages.find(img => img.id === service.image);
-              return (
-                <div key={service.id} className="premium-card rounded-2xl overflow-hidden flex h-32 group cursor-pointer">
-                  <div className="w-28 relative overflow-hidden shrink-0">
-                    {sImg && (
-                      <Image 
-                        src={sImg.imageUrl} 
-                        alt={service.name} 
-                        fill 
-                        className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
-                        data-ai-hint={sImg.imageHint}
-                      />
-                    )}
-                  </div>
-                  <div className="flex-1 p-4 flex flex-col justify-between">
-                    <div>
-                      <h4 className="text-sm font-bold text-primary truncate leading-none">{service.name}</h4>
-                      <p className="text-muted-foreground text-[10px] mt-1.5 line-clamp-2 leading-relaxed">{service.description}</p>
-                    </div>
-                    <div className="flex items-center justify-between mt-2">
-                      <div className="flex items-center gap-1 text-muted-foreground text-[9px] font-bold uppercase">
-                        <Clock size={10} />
-                        <span>{service.duration} min</span>
+            {servicesLoading ? (
+              <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
+            ) : services.length > 0 ? (
+              services.map((service: any) => {
+                const sImg = getServiceImage(service.image);
+                return (
+                  <Link href="/book" key={service.id}>
+                    <div className="premium-card rounded-2xl overflow-hidden flex h-32 group cursor-pointer mb-4">
+                      <div className="w-28 relative overflow-hidden shrink-0">
+                        <Image 
+                          src={sImg} 
+                          alt={service.name} 
+                          fill 
+                          className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
+                        />
                       </div>
-                      <span className="text-base font-black text-foreground tracking-tighter">R$ {service.price}</span>
+                      <div className="flex-1 p-4 flex flex-col justify-between">
+                        <div>
+                          <h4 className="text-sm font-bold text-primary truncate leading-none">{service.name}</h4>
+                          <p className="text-muted-foreground text-[10px] mt-1.5 line-clamp-2 leading-relaxed">{service.description}</p>
+                        </div>
+                        <div className="flex items-center justify-between mt-2">
+                          <div className="flex items-center gap-1 text-muted-foreground text-[9px] font-bold uppercase">
+                            <Clock size={10} />
+                            <span>{service.duration} min</span>
+                          </div>
+                          <span className="text-base font-black text-foreground tracking-tighter">R$ {service.price.toFixed(0)}</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              );
-            })}
+                  </Link>
+                );
+              })
+            ) : (
+              <div className="py-10 text-center opacity-30">
+                <p className="text-[10px] font-black uppercase tracking-widest">Nenhum serviço disponível</p>
+              </div>
+            )}
           </div>
         </section>
       </main>
