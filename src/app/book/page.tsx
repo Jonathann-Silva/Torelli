@@ -76,6 +76,9 @@ export default function BookPage() {
     let breakStart = breakMatch ? parse(breakMatch[1], 'HH:mm', new Date()) : null;
     let breakEnd = breakMatch ? parse(breakMatch[2], 'HH:mm', new Date()) : null;
 
+    const now = new Date();
+    const isToday = isSameDay(selectedDate, now);
+
     while (isBefore(current, end)) {
       const timeStr = format(current, 'HH:mm');
       
@@ -87,7 +90,14 @@ export default function BookPage() {
       // Check if it's already booked
       const isBooked = bookedAppointments.some((apt: any) => apt.time === timeStr);
 
-      if (!isBreak && !isBooked) {
+      // Check if time has already passed (if today)
+      let isPast = false;
+      if (isToday) {
+        // Comparison includes a small buffer (5 minutes) or just strict before
+        isPast = isBefore(current, now);
+      }
+
+      if (!isBreak && !isBooked && !isPast) {
         slots.push(timeStr);
       }
       
@@ -95,7 +105,7 @@ export default function BookPage() {
     }
 
     return slots;
-  }, [selectedBarber, settings, bookedAppointments]);
+  }, [selectedBarber, settings, bookedAppointments, selectedDate]);
 
   const handleConfirmBooking = async () => {
     if (!user) {
