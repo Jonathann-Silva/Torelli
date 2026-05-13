@@ -1,0 +1,65 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "manager",
+      "description": "Professional male manager portrait",
+      "imageUrl": "https://picsum.photos/seed/barber-owner/400/400",
+      "imageHint": "professional barber"
+    },
+    {
+      "id": "barber1",
+      "description": "Ricardo Silva barber portrait",
+      "imageUrl": "https://picsum.photos/seed/barber-portrait-1/400/400",
+      "imageHint": "professional barber"
+    },
+    {
+      "id": "barber2",
+      "description": "Arthur Fontes barber portrait",
+      "imageUrl": "https://picsum.photos/seed/barber-portrait-2/400/400",
+      "imageHint": "modern barber"
+    },
+    {
+      "id": "barber3",
+      "description": "Marco Aurélio barber portrait",
+      "imageUrl": "https://picsum.photos/seed/barber-portrait-3/400/400",
+      "imageHint": "classic barber"
+    },
+    {
+      "id": "client1",
+      "description": "Client portrait headshot",
+      "imageUrl": "https://picsum.photos/seed/male-client-1/200/200",
+      "imageHint": "stylish man"
+    },
+    {
+      "id": "client2",
+      "description": "Client portrait headshot",
+      "imageUrl": "https://picsum.photos/seed/male-client-2/200/200",
+      "imageHint": "modern gentleman"
+    },
+    {
+      "id": "service-razor",
+      "description": "Straight razor close up",
+      "imageUrl": "https://picsum.photos/seed/barber-tools-razor/800/600",
+      "imageHint": "barber razor"
+    },
+    {
+      "id": "service-cut",
+      "description": "Modern fade haircut",
+      "imageUrl": "https://picsum.photos/seed/haircut-fade/800/600",
+      "imageHint": "fade haircut"
+    },
+    {
+      "id": "service-beard",
+      "description": "Hot towel shave",
+      "imageUrl": "https://picsum.photos/seed/shave-beard-hot-towel/800/600",
+      "imageHint": "shave treatment"
+    },
+    {
+      "id": "hero-promo",
+      "description": "Barber cutting hair with precision",
+      "imageUrl": "https://img.freepik.com/fotos-premium/cliente-hipster-cortando-o-cabelo-maos-de-barbeiro-com-maquina-de-cortar-cabelo-close-up-homem-barbudo-na-barbearia-conceito-de-corte-de-cabelo-homem-visitando-cabeleireiro-na-barbearia_293990-3162.jpg",
+      "imageHint": "barber cutting"
+    }
+  ]
+}
