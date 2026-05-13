@@ -12,7 +12,7 @@ import { useFirestore, useUser, useCollection, useDoc } from '@/firebase';
 import { collection, addDoc, serverTimestamp, query, orderBy, where, doc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
-import { format, addDays, startOfDay, isSameDay, parse, addMinutes, isAfter, isBefore } from 'date-fns';
+import { format, addDays, isSameDay, parse, addMinutes, isAfter, isBefore, set } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export default function BookPage() {
@@ -25,6 +25,15 @@ export default function BookPage() {
   const [selectedBarber, setSelectedBarber] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTime, setSelectedTime] = useState<string>('');
+  const [currentTime, setCurrentTime] = useState<Date>(new Date());
+
+  // Update current time every minute to keep the slots "real-time"
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Fetch Services
   const servicesQuery = useMemo(() => db ? query(collection(db, 'services'), orderBy('name')) : null, [db]);
@@ -74,27 +83,25 @@ export default function BookPage() {
     const slots: string[] = [];
     const interval = settings.appointmentInterval || 30; // Minutes from admin settings
     
-    // Simple parser for schedule "09:00 - 19:00"
     const scheduleMatch = selectedBarber.schedule?.match(/(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})/);
     const breakMatch = selectedBarber.break?.match(/(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})/);
 
     if (!scheduleMatch) return [];
 
-    let current = parse(scheduleMatch[1], 'HH:mm', new Date());
-    const end = parse(scheduleMatch[2], 'HH:mm', new Date());
+    let current = parse(scheduleMatch[1], 'HH:mm', selectedDate);
+    const end = parse(scheduleMatch[2], 'HH:mm', selectedDate);
     
-    let breakStart = breakMatch ? parse(breakMatch[1], 'HH:mm', new Date()) : null;
-    let breakEnd = breakMatch ? parse(breakMatch[2], 'HH:mm', new Date()) : null;
+    let breakStart = breakMatch ? parse(breakMatch[1], 'HH:mm', selectedDate) : null;
+    let breakEnd = breakMatch ? parse(breakMatch[2], 'HH:mm', selectedDate) : null;
 
-    const now = new Date();
-    const isToday = isSameDay(selectedDate, now);
+    const isToday = isSameDay(selectedDate, currentTime);
 
     while (isBefore(current, end)) {
       const timeStr = format(current, 'HH:mm');
       
       // Check if it's during break
       const isBreak = breakStart && breakEnd && 
-                      (isAfter(current, breakStart) || format(current, 'HH:mm') === format(breakStart, 'HH:mm')) && 
+                      (isAfter(current, breakStart) || timeStr === format(breakStart, 'HH:mm')) && 
                       isBefore(current, breakEnd);
 
       // Check if it's already booked
@@ -103,7 +110,12 @@ export default function BookPage() {
       // Check if time has already passed (if today)
       let isPast = false;
       if (isToday) {
-        isPast = isBefore(current, now);
+        // We set the hours and minutes on the current slot relative to today to compare accurately
+        const slotDate = new Date(selectedDate);
+        const [hours, mins] = timeStr.split(':').map(Number);
+        slotDate.setHours(hours, mins, 0, 0);
+        
+        isPast = isBefore(slotDate, currentTime);
       }
 
       if (!isBreak && !isBooked && !isPast) {
@@ -114,7 +126,7 @@ export default function BookPage() {
     }
 
     return slots;
-  }, [selectedBarber, settings, bookedAppointments, selectedDate]);
+  }, [selectedBarber, settings, bookedAppointments, selectedDate, currentTime]);
 
   const handleConfirmBooking = async () => {
     if (!user) {
@@ -226,7 +238,7 @@ export default function BookPage() {
                 key={barber.id}
                 onClick={() => {
                   setSelectedBarber(barber);
-                  setSelectedTime(''); // Reset time when barber changes
+                  setSelectedTime(''); 
                 }}
                 className={`premium-card p-4 rounded-2xl flex items-center gap-4 cursor-pointer relative ${selectedBarber?.id === barber.id ? 'border-primary bg-primary/5 ring-1 ring-primary' : ''}`}
               >
@@ -257,7 +269,7 @@ export default function BookPage() {
                   key={date.toISOString()}
                   onClick={() => {
                     setSelectedDate(date);
-                    setSelectedTime(''); // Reset time when date changes
+                    setSelectedTime(''); 
                   }}
                   className={`flex flex-col items-center justify-center min-w-[72px] h-24 rounded-2xl border transition-all cursor-pointer ${isActive ? 'border-primary bg-primary/10 text-primary' : 'border-white/5 bg-secondary/30 text-muted-foreground'}`}
                 >
