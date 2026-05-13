@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -6,7 +5,7 @@ import Image from 'next/image';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { User as UserIcon, Mail, Phone, Lock, Camera, X } from 'lucide-react';
+import { User as UserIcon, Mail, Phone, Lock, Camera, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,6 +14,7 @@ import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, useAuth } from '@/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { updateProfile, updateEmail, updatePassword } from 'firebase/auth';
+import { compressImage } from '@/lib/image-compressor';
 
 export default function MeusDadosPage() {
   const router = useRouter();
@@ -23,6 +23,7 @@ export default function MeusDadosPage() {
   const auth = useAuth();
 
   const [loading, setLoading] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const defaultImage = PlaceHolderImages.find(img => img.id === 'client1')?.imageUrl || '';
@@ -69,18 +70,26 @@ export default function MeusDadosPage() {
     setPhone(value);
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfileImage(reader.result as string);
+      setIsCompressing(true);
+      try {
+        const compressed = await compressImage(file, 400, 400, 0.7);
+        setProfileImage(compressed);
         toast({
           title: "Foto carregada",
-          description: "Clique em salvar para confirmar a alteração.",
+          description: "A imagem foi otimizada. Clique em salvar para confirmar.",
         });
-      };
-      reader.readAsDataURL(file);
+      } catch (error) {
+        toast({
+          title: "Erro ao processar foto",
+          description: "Não foi possível comprimir a imagem.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsCompressing(false);
+      }
     }
   };
 
@@ -170,14 +179,18 @@ export default function MeusDadosPage() {
       <main className="max-w-[480px] mx-auto px-5 pt-24 pb-32 space-y-10">
         <div className="flex flex-col items-center text-center">
           <div className="relative group">
-            <div className="w-32 h-32 rounded-full overflow-hidden border-2 border-primary p-1 bg-secondary/30">
-              <Image 
-                src={profileImage} 
-                alt="Profile" 
-                width={128} 
-                height={128} 
-                className="w-full h-full object-cover rounded-full"
-              />
+            <div className="w-32 h-32 rounded-full overflow-hidden border-2 border-primary p-1 bg-secondary/30 flex items-center justify-center">
+              {isCompressing ? (
+                <Loader2 className="animate-spin text-primary" size={40} />
+              ) : (
+                <Image 
+                  src={profileImage} 
+                  alt="Profile" 
+                  width={128} 
+                  height={128} 
+                  className="w-full h-full object-cover rounded-full"
+                />
+              )}
             </div>
             
             <input 
@@ -190,8 +203,9 @@ export default function MeusDadosPage() {
             
             <button 
               type="button"
+              disabled={isCompressing}
               onClick={handlePhotoAction}
-              className="absolute bottom-0 right-0 bg-primary text-primary-foreground p-2 rounded-full shadow-lg transition-transform active:scale-95 amber-glow"
+              className="absolute bottom-0 right-0 bg-primary text-primary-foreground p-2 rounded-full shadow-lg transition-transform active:scale-95 amber-glow disabled:opacity-50"
             >
               {profileImage === (user?.photoURL || defaultImage) ? <Camera size={20} /> : <X size={20} />}
             </button>
@@ -263,7 +277,7 @@ export default function MeusDadosPage() {
             <Button 
               type="submit" 
               className="w-full h-14 rounded-xl bg-primary text-primary-foreground font-black uppercase tracking-widest amber-glow hover:brightness-110 active:scale-95 transition-all"
-              disabled={loading}
+              disabled={loading || isCompressing}
             >
               {loading ? "Salvando..." : "Salvar Alterações"}
             </Button>
@@ -272,7 +286,7 @@ export default function MeusDadosPage() {
               variant="outline" 
               className="w-full h-14 rounded-xl border-primary/20 text-primary font-black uppercase tracking-widest hover:bg-primary/5"
               onClick={() => router.back()}
-              disabled={loading}
+              disabled={loading || isCompressing}
             >
               Cancelar
             </Button>

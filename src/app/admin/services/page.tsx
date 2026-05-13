@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useMemo, useRef } from 'react';
@@ -23,6 +22,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { compressImage } from '@/lib/image-compressor';
 
 export default function ServicesAdminPage() {
   const db = useFirestore();
@@ -30,6 +30,7 @@ export default function ServicesAdminPage() {
   const [isGenerating, setIsGenerating] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
@@ -71,14 +72,19 @@ export default function ServicesAdminPage() {
     setIsDialogOpen(true);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData({ ...formData, image: reader.result as string });
-      };
-      reader.readAsDataURL(file);
+      setIsCompressing(true);
+      try {
+        const compressed = await compressImage(file, 1200, 900, 0.7);
+        setFormData({ ...formData, image: compressed });
+        toast({ title: "Imagem otimizada", description: "O arquivo foi comprimido para economizar espaço." });
+      } catch (error) {
+        toast({ title: "Erro", description: "Falha ao processar imagem.", variant: "destructive" });
+      } finally {
+        setIsCompressing(false);
+      }
     }
   };
 
@@ -178,10 +184,12 @@ export default function ServicesAdminPage() {
               <div className="space-y-4 py-4">
                 <div className="flex flex-col items-center gap-2 pb-2">
                   <div 
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => !isCompressing && fileInputRef.current?.click()}
                     className="group relative w-full h-40 rounded-2xl bg-secondary/50 border-2 border-dashed border-white/10 flex items-center justify-center overflow-hidden cursor-pointer hover:border-primary/50 transition-colors"
                   >
-                    {formData.image ? (
+                    {isCompressing ? (
+                      <Loader2 className="animate-spin text-primary" size={32} />
+                    ) : formData.image ? (
                       <Image 
                         src={getServiceImage(formData.image)} 
                         alt="Preview" 
@@ -191,11 +199,15 @@ export default function ServicesAdminPage() {
                     ) : (
                       <Camera className="text-muted-foreground group-hover:text-primary" size={32} />
                     )}
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Sparkles size={24} className="text-white" />
-                    </div>
+                    {!isCompressing && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Sparkles size={24} className="text-white" />
+                      </div>
+                    )}
                   </div>
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Alterar Foto do Serviço</Label>
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-primary">
+                    {isCompressing ? "Otimizando imagem..." : "Alterar Foto do Serviço"}
+                  </Label>
                   <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
                 </div>
 
@@ -255,7 +267,7 @@ export default function ServicesAdminPage() {
               <DialogFooter>
                 <Button 
                   onClick={handleSaveService} 
-                  disabled={isSaving}
+                  disabled={isSaving || isCompressing}
                   className="w-full bg-primary text-primary-foreground font-black uppercase tracking-widest h-14 rounded-2xl"
                 >
                   {isSaving ? <Loader2 className="animate-spin" /> : (editingServiceId ? "Atualizar Serviço" : "Criar Serviço")}

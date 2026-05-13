@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useMemo, useRef } from 'react';
@@ -23,6 +22,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { compressImage } from '@/lib/image-compressor';
 
 export default function BarbersAdminPage() {
   const db = useFirestore();
@@ -31,6 +31,7 @@ export default function BarbersAdminPage() {
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
   const [activeSettingField, setActiveSettingField] = useState<'interval' | 'cleaning' | 'combo' | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
   const [editingBarberId, setEditingBarberId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
@@ -42,7 +43,6 @@ export default function BarbersAdminPage() {
     image: 'barber1'
   });
 
-  // Global settings from Firestore
   const settingsRef = useMemo(() => doc(db, 'settings', 'global'), [db]);
   const { data: settingsData, loading: settingsLoading } = useDoc(settingsRef);
   
@@ -87,14 +87,19 @@ export default function BarbersAdminPage() {
     setIsAddDialogOpen(true);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData({ ...formData, image: reader.result as string });
-      };
-      reader.readAsDataURL(file);
+      setIsCompressing(true);
+      try {
+        const compressed = await compressImage(file);
+        setFormData({ ...formData, image: compressed });
+        toast({ title: "Foto otimizada", description: "A imagem foi comprimida com sucesso." });
+      } catch (error) {
+        toast({ title: "Erro", description: "Falha ao processar imagem.", variant: "destructive" });
+      } finally {
+        setIsCompressing(false);
+      }
     }
   };
 
@@ -196,10 +201,12 @@ export default function BarbersAdminPage() {
               <div className="space-y-4 py-4">
                 <div className="space-y-2 flex flex-col items-center pb-2">
                   <div 
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => !isCompressing && fileInputRef.current?.click()}
                     className="group relative w-24 h-24 rounded-2xl bg-secondary/50 border-2 border-dashed border-white/10 flex items-center justify-center overflow-hidden cursor-pointer hover:border-primary/50 transition-colors"
                   >
-                    {formData.image ? (
+                    {isCompressing ? (
+                      <Loader2 className="animate-spin text-primary" size={24} />
+                    ) : formData.image ? (
                       <Image 
                         src={getBarberImage(formData.image)} 
                         alt="Preview" 
@@ -209,11 +216,15 @@ export default function BarbersAdminPage() {
                     ) : (
                       <Camera className="text-muted-foreground group-hover:text-primary" size={24} />
                     )}
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Sparkles size={16} className="text-white" />
-                    </div>
+                    {!isCompressing && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Sparkles size={16} className="text-white" />
+                      </div>
+                    )}
                   </div>
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-primary mt-2">Alterar Foto</Label>
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-primary mt-2">
+                    {isCompressing ? "Processando..." : "Alterar Foto"}
+                  </Label>
                   <input 
                     type="file" 
                     ref={fileInputRef} 
@@ -277,7 +288,7 @@ export default function BarbersAdminPage() {
               <DialogFooter>
                 <Button 
                   onClick={handleSaveBarber} 
-                  disabled={isSaving}
+                  disabled={isSaving || isCompressing}
                   className="w-full bg-primary text-primary-foreground font-black uppercase tracking-widest h-14 rounded-2xl"
                 >
                   {isSaving ? <Loader2 className="animate-spin" /> : (editingBarberId ? "Atualizar" : "Salvar Barbeiro")}
