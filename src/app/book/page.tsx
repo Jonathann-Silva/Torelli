@@ -1,17 +1,19 @@
 
 "use client"
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import { Header } from '@/components/layout/Header';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { X, CheckCircle, Scissors, Loader2, Calendar as CalendarIcon, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { useFirestore, useUser, useCollection } from '@/firebase';
-import { collection, addDoc, serverTimestamp, query, orderBy } from 'firebase/firestore';
+import { useFirestore, useUser, useCollection, useDoc } from '@/firebase';
+import { collection, addDoc, serverTimestamp, query, orderBy, where, doc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
+import { format, addDays, startOfDay, isSameDay, parse, addMinutes, isAfter, isBefore } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 export default function BookPage() {
   const router = useRouter();
@@ -21,8 +23,8 @@ export default function BookPage() {
   
   const [selectedService, setSelectedService] = useState<any>(null);
   const [selectedBarber, setSelectedBarber] = useState<any>(null);
-  const [selectedDate, setSelectedDate] = useState(new Date().getDate());
-  const [selectedTime, setSelectedTime] = useState('15:00');
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedTime, setSelectedTime] = useState<string>('');
 
   // Fetch Services
   const servicesQuery = useMemo(() => db ? query(collection(db, 'services'), orderBy('name')) : null, [db]);
@@ -32,13 +34,76 @@ export default function BookPage() {
   const barbersQuery = useMemo(() => db ? query(collection(db, 'barbers'), orderBy('name')) : null, [db]);
   const { data: barbers = [], loading: barbersLoading } = useCollection(barbersQuery);
 
+  // Fetch Global Settings
+  const settingsRef = useMemo(() => db ? doc(db, 'settings', 'global') : null, [db]);
+  const { data: settings } = useDoc(settingsRef);
+
+  // Fetch Existing Appointments for the selected date and barber to filter availability
+  const dateStr = format(selectedDate, 'yyyy-MM-dd');
+  const appointmentsQuery = useMemo(() => {
+    if (!db || !selectedBarber) return null;
+    return query(
+      collection(db, 'appointments'),
+      where('barberName', '==', selectedBarber.name),
+      where('date', '==', dateStr),
+      where('status', 'not-in', ['cancelled'])
+    );
+  }, [db, selectedBarber, dateStr]);
+
+  const { data: bookedAppointments = [] } = useCollection(appointmentsQuery);
+
+  // Generate dynamic dates (next 14 days)
+  const availableDates = useMemo(() => {
+    return Array.from({ length: 14 }).map((_, i) => addDays(new Date(), i));
+  }, []);
+
+  // Generate time slots based on barber schedule and global settings
+  const timeSlots = useMemo(() => {
+    if (!selectedBarber || !settings) return [];
+
+    const slots: string[] = [];
+    const interval = settings.appointmentInterval || 30; // Minutes from admin settings
+    
+    // Simple parser for schedule "09:00 - 19:00"
+    const scheduleMatch = selectedBarber.schedule?.match(/(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})/);
+    const breakMatch = selectedBarber.break?.match(/(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})/);
+
+    if (!scheduleMatch) return [];
+
+    let current = parse(scheduleMatch[1], 'HH:mm', new Date());
+    const end = parse(scheduleMatch[2], 'HH:mm', new Date());
+    
+    let breakStart = breakMatch ? parse(breakMatch[1], 'HH:mm', new Date()) : null;
+    let breakEnd = breakMatch ? parse(breakMatch[2], 'HH:mm', new Date()) : null;
+
+    while (isBefore(current, end)) {
+      const timeStr = format(current, 'HH:mm');
+      
+      // Check if it's during break
+      const isBreak = breakStart && breakEnd && 
+                      (isAfter(current, breakStart) || format(current, 'HH:mm') === format(breakStart, 'HH:mm')) && 
+                      isBefore(current, breakEnd);
+
+      // Check if it's already booked
+      const isBooked = bookedAppointments.some((apt: any) => apt.time === timeStr);
+
+      if (!isBreak && !isBooked) {
+        slots.push(timeStr);
+      }
+      
+      current = addMinutes(current, interval);
+    }
+
+    return slots;
+  }, [selectedBarber, settings, bookedAppointments]);
+
   const handleConfirmBooking = async () => {
     if (!user) {
       toast({ title: "Atenção", description: "Você precisa estar logado para agendar." });
       return;
     }
-    if (!selectedService || !selectedBarber) {
-      toast({ title: "Atenção", description: "Selecione um serviço e um barbeiro." });
+    if (!selectedService || !selectedBarber || !selectedTime) {
+      toast({ title: "Atenção", description: "Selecione serviço, barbeiro e horário." });
       return;
     }
 
@@ -49,7 +114,7 @@ export default function BookPage() {
         clientName: user.displayName || "Cliente",
         serviceName: selectedService.name,
         barberName: selectedBarber.name,
-        date: `2024-10-${selectedDate}`, // Simplificado para o exemplo
+        date: dateStr,
         time: selectedTime,
         status: 'pending',
         price: selectedService.price,
@@ -60,7 +125,7 @@ export default function BookPage() {
 
       await addDoc(collection(db, 'notifications'), {
         title: "Novo Agendamento",
-        message: `${user.displayName} solicitou ${selectedService.name} com ${selectedBarber.name} para as ${selectedTime}.`,
+        message: `${user.displayName} solicitou ${selectedService.name} com ${selectedBarber.name} para o dia ${format(selectedDate, 'dd/MM')} às ${selectedTime}.`,
         createdAt: new Date().toISOString(),
         read: false,
         type: 'info',
@@ -110,8 +175,9 @@ export default function BookPage() {
             Escolha o Serviço
           </h3>
           <div className="grid grid-cols-1 gap-3">
-            {servicesLoading ? <Loader2 className="animate-spin text-primary mx-auto" /> : 
-             services.map((service: any) => (
+            {servicesLoading ? (
+              <div className="flex justify-center py-4"><Loader2 className="animate-spin text-primary" /></div>
+            ) : services.map((service: any) => (
               <div 
                 key={service.id}
                 onClick={() => setSelectedService(service)}
@@ -122,7 +188,7 @@ export default function BookPage() {
                 </div>
                 <div className="flex-1">
                   <h4 className="text-sm font-bold text-foreground leading-none">{service.name}</h4>
-                  <p className="text-[10px] text-muted-foreground mt-1">R$ {service.price.toFixed(2)} • {service.duration} min</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">R$ {Number(service.price).toFixed(2)} • {service.duration} min</p>
                 </div>
                 {selectedService?.id === service.id && <CheckCircle className="text-primary" size={20} />}
               </div>
@@ -134,11 +200,15 @@ export default function BookPage() {
         <section className="space-y-6">
           <h3 className="text-xl font-black text-white">Selecione o Barbeiro</h3>
           <div className="grid grid-cols-1 gap-4">
-            {barbersLoading ? <Loader2 className="animate-spin text-primary mx-auto" /> :
-             barbers.filter((b: any) => b.status === 'active').map((barber: any) => (
+            {barbersLoading ? (
+              <div className="flex justify-center py-4"><Loader2 className="animate-spin text-primary" /></div>
+            ) : barbers.filter((b: any) => b.status === 'active').map((barber: any) => (
               <div 
                 key={barber.id}
-                onClick={() => setSelectedBarber(barber)}
+                onClick={() => {
+                  setSelectedBarber(barber);
+                  setSelectedTime(''); // Reset time when barber changes
+                }}
                 className={`premium-card p-4 rounded-2xl flex items-center gap-4 cursor-pointer relative ${selectedBarber?.id === barber.id ? 'border-primary bg-primary/5 ring-1 ring-primary' : ''}`}
               >
                 <div className="relative w-16 h-16 rounded-xl overflow-hidden shrink-0">
@@ -161,43 +231,69 @@ export default function BookPage() {
             Escolha a Data
           </h3>
           <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-2">
-            {[14, 15, 16, 17, 18, 19].map((day) => (
-              <div 
-                key={day}
-                onClick={() => setSelectedDate(day)}
-                className={`flex flex-col items-center justify-center min-w-[72px] h-24 rounded-2xl border transition-all cursor-pointer ${selectedDate === day ? 'border-primary bg-primary/10 text-primary' : 'border-white/5 bg-secondary/30 text-muted-foreground'}`}
-              >
-                <span className="text-[10px] font-black uppercase tracking-widest">Out</span>
-                <span className="text-2xl font-black mt-1">{day}</span>
-              </div>
-            ))}
+            {availableDates.map((date) => {
+              const isActive = isSameDay(selectedDate, date);
+              return (
+                <div 
+                  key={date.toISOString()}
+                  onClick={() => {
+                    setSelectedDate(date);
+                    setSelectedTime(''); // Reset time when date changes
+                  }}
+                  className={`flex flex-col items-center justify-center min-w-[72px] h-24 rounded-2xl border transition-all cursor-pointer ${isActive ? 'border-primary bg-primary/10 text-primary' : 'border-white/5 bg-secondary/30 text-muted-foreground'}`}
+                >
+                  <span className="text-[10px] font-black uppercase tracking-widest">
+                    {format(date, 'MMM', { locale: ptBR })}
+                  </span>
+                  <span className="text-2xl font-black mt-1">{format(date, 'dd')}</span>
+                </div>
+              );
+            })}
           </div>
         </section>
 
         {/* Time Selection */}
         <section className="space-y-6">
-          <h3 className="text-xl font-black text-white flex items-center gap-2">
-            <Clock className="text-primary" size={20} />
-            Horários Disponíveis
-          </h3>
-          <div className="grid grid-cols-3 gap-3">
-            {['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'].map((time) => (
-              <button
-                key={time}
-                onClick={() => setSelectedTime(time)}
-                className={`py-4 rounded-xl border font-bold text-sm transition-all ${selectedTime === time ? 'bg-primary text-primary-foreground border-primary shadow-lg' : 'bg-secondary/30 border-white/5 text-muted-foreground'}`}
-              >
-                {time}
-              </button>
-            ))}
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-black text-white flex items-center gap-2">
+              <Clock className="text-primary" size={20} />
+              Horários Disponíveis
+            </h3>
+            {selectedBarber && (
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                Com {selectedBarber.name}
+              </span>
+            )}
           </div>
+          
+          {!selectedBarber ? (
+            <div className="bg-secondary/20 p-8 rounded-2xl border border-dashed border-white/5 text-center">
+              <p className="text-xs text-muted-foreground uppercase font-black tracking-widest">Selecione um barbeiro primeiro</p>
+            </div>
+          ) : timeSlots.length > 0 ? (
+            <div className="grid grid-cols-3 gap-3">
+              {timeSlots.map((time) => (
+                <button
+                  key={time}
+                  onClick={() => setSelectedTime(time)}
+                  className={`py-4 rounded-xl border font-bold text-sm transition-all ${selectedTime === time ? 'bg-primary text-primary-foreground border-primary shadow-lg' : 'bg-secondary/30 border-white/5 text-muted-foreground'}`}
+                >
+                  {time}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-secondary/20 p-8 rounded-2xl border border-dashed border-white/5 text-center">
+              <p className="text-xs text-muted-foreground uppercase font-black tracking-widest">Nenhum horário disponível para esta data</p>
+            </div>
+          )}
         </section>
       </main>
 
       <div className="fixed bottom-0 left-0 w-full bg-background/80 backdrop-blur-xl border-t border-white/5 p-6 z-50">
         <div className="max-w-[600px] mx-auto">
           <Button 
-            disabled={loading || !selectedService || !selectedBarber}
+            disabled={loading || !selectedService || !selectedBarber || !selectedTime}
             onClick={handleConfirmBooking}
             className="w-full bg-primary text-primary-foreground h-14 rounded-2xl font-black text-lg uppercase tracking-widest amber-glow shadow-2xl"
           >

@@ -5,5 +5,5 @@ export const firebaseConfig = {
   storageBucket: "studio-3657521221-d612e.firebasestorage.app",
   messagingSenderId: "178968479488",
   appId: "1:178968479488:web:9ccedca68620490e79d5e5",
-  vapidKey: "BKe1M1_Z8Y_6Q7V1_X-Q_... (Adicione sua Chave VAPID aqui do Console Firebase)"
+  vapidKey: "BCP-VGIe2Atp8Ff0doF2P1lcD9KZVsAeCgws_AiDZBnNtVixLszHCCWvIulBFumJ6i5z2bJdjUeZlRJuxo_JZG8"
 };
