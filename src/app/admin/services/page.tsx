@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState } from 'react';
@@ -44,7 +45,7 @@ export default function ServicesAdminPage() {
       <Header />
       
       <main className="pt-24 pb-32 px-4 md:px-margin max-w-container-max mx-auto space-y-12">
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <header className="flex flex-col items-center text-center gap-6">
           <div className="space-y-1">
             <h2 className="text-4xl font-black text-white tracking-tighter">Gestão de Serviços</h2>
             <p className="text-muted-foreground text-sm font-medium">Gerencie seu catálogo de serviços premium e preços.</p>
