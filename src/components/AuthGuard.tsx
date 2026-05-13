@@ -9,6 +9,7 @@ import { Loader2, Scissors } from 'lucide-react';
  * Componente que protege todas as rotas da aplicação.
  * Se o usuário não estiver autenticado e tentar acessar uma página protegida,
  * ele será redirecionado para o login.
+ * Adicionalmente, restringe rotas /admin apenas para admin@gmail.com.
  */
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useUser();
@@ -23,12 +24,17 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!loading && mounted) {
       const isAuthPage = pathname === '/login' || pathname === '/register';
+      const isAdminRoute = pathname.startsWith('/admin');
+      const isAdminUser = user?.email === 'admin@gmail.com';
       
       if (!user && !isAuthPage) {
         // Se não logado e não está em login/register, vai para login
         router.replace('/login');
       } else if (user && isAuthPage) {
         // Se logado e está em login/register, vai para o início
+        router.replace('/');
+      } else if (user && isAdminRoute && !isAdminUser) {
+        // RESTRIÇÃO: Se logado, em rota admin, mas não é o e-mail autorizado, volta para o início
         router.replace('/');
       }
     }
@@ -58,6 +64,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   }
 
   const isAuthPage = pathname === '/login' || pathname === '/register';
+  const isAdminRoute = pathname.startsWith('/admin');
+  const isAdminUser = user?.email === 'admin@gmail.com';
   
   // Se não estiver logado e a página for protegida, não renderiza nada enquanto redireciona
   if (!user && !isAuthPage) {
@@ -66,6 +74,11 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   // Se estiver logado e tentar acessar login/register, não renderiza nada enquanto redireciona
   if (user && isAuthPage) {
+    return null;
+  }
+
+  // Se tentar acessar admin sem ser o admin@gmail.com, não renderiza nada enquanto redireciona
+  if (user && isAdminRoute && !isAdminUser) {
     return null;
   }
 

@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useMemo } from 'react';
@@ -17,7 +16,8 @@ import {
   HelpCircle, 
   LogOut, 
   ChevronRight,
-  CheckCircle2
+  CheckCircle2,
+  ShieldCheck
 } from 'lucide-react';
 import { useUser, useDoc, useFirestore, useAuth } from '@/firebase';
 import { doc } from 'firebase/firestore';
@@ -55,6 +55,8 @@ export default function ProfilePage() {
     }
   };
 
+  const isAdmin = user?.email === 'admin@gmail.com';
+
   const menuItems = [
     { label: 'Meus Dados', icon: UserCog, href: '/profile/meus-dados' },
     { label: 'Notificações', icon: Bell, badge: true, href: '/notifications' },
@@ -81,10 +83,33 @@ export default function ProfilePage() {
                 />
               )}
             </div>
+            {isAdmin && (
+              <div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground p-1.5 rounded-lg shadow-lg">
+                <ShieldCheck size={16} />
+              </div>
+            )}
           </div>
           <h2 className="text-2xl font-black text-white tracking-tight">{displayName}</h2>
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mt-1">Membro desde {memberSince}</p>
         </section>
+
+        {/* Admin Access Quick Link */}
+        {isAdmin && (
+          <Link href="/admin">
+            <button className="w-full bg-primary/10 border border-primary/20 p-4 rounded-2xl flex items-center justify-between group hover:bg-primary/20 transition-all">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary">
+                  <ShieldCheck size={20} />
+                </div>
+                <div className="text-left">
+                  <span className="text-sm font-black text-white uppercase tracking-tighter">Painel Administrativo</span>
+                  <p className="text-[9px] font-bold text-primary uppercase tracking-widest">Acesso Restrito</p>
+                </div>
+              </div>
+              <ChevronRight size={18} className="text-primary" />
+            </button>
+          </Link>
+        )}
 
         {/* Digital Loyalty Card Section */}
         <section className="bg-secondary/40 border border-white/5 rounded-3xl p-6 relative overflow-hidden">
@@ -147,7 +172,7 @@ export default function ProfilePage() {
           </div>
           <div className="bg-secondary/20 border border-white/5 p-4 rounded-2xl flex flex-col items-center text-center">
             <User size={16} className="text-primary mb-1" />
-            <span className="text-[8px] font-black text-white uppercase leading-none">{userData?.phone || 'Sem Telefone'}</span>
+            <span className="text-[8px] font-black text-white uppercase leading-none text-xs truncate max-w-full">{userData?.phone || 'Sem Telefone'}</span>
           </div>
         </section>
 
