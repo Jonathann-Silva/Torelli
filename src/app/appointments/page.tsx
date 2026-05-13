@@ -22,11 +22,13 @@ export default function AppointmentsPage() {
   const appointmentsQuery = useMemo(() => {
     if (!db) return null;
     // Filtramos pelo nome do cliente. Se o usuário estiver logado com Google, usamos o nome dele.
-    const nameToFilter = user?.displayName || 'Gabriel Martins';
+    const nameToFilter = user?.displayName || '';
     
+    if (!nameToFilter) return null;
+
     // Definimos os status baseados na aba ativa
     const statusFilter = activeTab === 'upcoming' 
-      ? ['confirmed', 'ongoing'] 
+      ? ['confirmed', 'ongoing', 'pending'] 
       : ['completed', 'cancelled'];
 
     return query(
@@ -84,6 +86,7 @@ export default function AppointmentsPage() {
             appointments.map((apt: any) => {
               const barberImg = PlaceHolderImages.find(img => img.id === 'barber' + (apt.barberName?.includes('Marco') ? '3' : '1'));
               const isPast = apt.status === 'completed' || apt.status === 'cancelled';
+              const formattedDate = apt.date ? apt.date.split('-').reverse().join('-') : '---';
               
               return (
                 <div key={apt.id} className={cn(
@@ -114,6 +117,7 @@ export default function AppointmentsPage() {
                     >
                       {apt.status === 'ongoing' ? 'Em Andamento' : 
                        apt.status === 'confirmed' ? 'Confirmado' : 
+                       apt.status === 'pending' ? 'Pendente' : 
                        apt.status === 'completed' ? 'Concluído' : 'Cancelado'}
                     </Badge>
                   </div>
@@ -124,7 +128,7 @@ export default function AppointmentsPage() {
                         <Calendar size={12} />
                         <span>Data</span>
                       </div>
-                      <p className="text-sm font-semibold text-foreground">{apt.date}</p>
+                      <p className="text-sm font-semibold text-foreground">{formattedDate}</p>
                     </div>
                     <div className="space-y-1">
                       <div className="flex items-center gap-1 text-muted-foreground text-[10px] font-bold uppercase tracking-widest">

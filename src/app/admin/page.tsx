@@ -114,6 +114,7 @@ export default function AdminDashboard() {
               appointments.map((apt: any) => {
                 const isPending = apt.status === 'pending';
                 const isConfirmed = apt.status === 'confirmed';
+                const formattedDate = apt.date ? apt.date.split('-').reverse().join('-') : '---';
 
                 return (
                   <div key={apt.id} className="premium-card p-6 rounded-3xl flex flex-col gap-6">
@@ -124,7 +125,7 @@ export default function AdminDashboard() {
                         </div>
                         <div>
                           <h4 className="font-black text-lg text-foreground leading-none">{apt.clientName}</h4>
-                          <p className="text-xs text-muted-foreground mt-2">{apt.date} às {apt.time}</p>
+                          <p className="text-xs text-muted-foreground mt-2">{formattedDate} às {apt.time}</p>
                         </div>
                       </div>
                       <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${apt.status === 'pending' ? 'bg-primary/20 text-primary border-primary/20 animate-pulse' : 'bg-secondary/30 text-muted-foreground border-white/5'}`}>
