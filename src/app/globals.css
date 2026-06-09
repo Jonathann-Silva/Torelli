@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -35,6 +36,7 @@
 @layer base {
   * {
     @apply border-border;
+    -webkit-tap-highlight-color: transparent;
   }
   body {
     @apply bg-background text-foreground font-body antialiased;
@@ -42,6 +44,8 @@
       radial-gradient(circle at 50% 0%, hsla(45, 100%, 50%, 0.05) 0%, transparent 50%),
       radial-gradient(circle at 0% 100%, hsla(19, 60%, 23%, 0.05) 0%, transparent 40%);
     background-attachment: fixed;
+    /* Melhora performance de repainting no mobile */
+    transform: translateZ(0);
   }
 }
 
@@ -77,6 +81,7 @@
 
 .premium-card {
   @apply bg-card border border-white/5 transition-all duration-300;
+  will-change: transform, border-color;
 }
 
 .premium-card:hover {
@@ -90,4 +95,9 @@
 .hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Otimização para iOS Safari momentum scrolling */
+.scroll-smooth-mobile {
+  -webkit-overflow-scrolling: touch;
 }
