@@ -11,11 +11,10 @@ export const BottomNav = () => {
   const pathname = usePathname();
   const isAdmin = pathname.startsWith('/admin');
 
-  // Helper function to handle active state styles
   const getLinkStyles = (href: string) => {
     const isActive = pathname === href;
     return cn(
-      "flex flex-col items-center justify-center w-full h-full transition-all duration-200 active:scale-90 touch-none",
+      "flex flex-col items-center justify-center w-full h-full transition-all duration-200 active:scale-90",
       isActive ? "text-primary" : "text-muted-foreground"
     );
   };
@@ -24,13 +23,15 @@ export const BottomNav = () => {
     const isActive = pathname === href;
     return cn(
       "transition-transform duration-200",
-      isActive ? "scale-110 fill-primary/10" : "group-active:scale-95"
+      isActive ? "scale-110 fill-primary/10" : ""
     );
   };
 
+  const navClasses = "fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-[100] flex justify-around items-center px-2 h-20 bg-card/95 backdrop-blur-lg border-t border-white/5 shadow-[0_-10px_40px_rgba(0,0,0,0.8)] select-none pointer-events-auto";
+
   if (isAdmin) {
     return (
-      <nav className="fixed bottom-0 left-0 right-0 w-full max-w-[480px] mx-auto z-50 flex justify-around items-center px-2 pb-safe h-20 bg-card/95 backdrop-blur-lg border-t border-white/5 rounded-t-2xl shadow-[0_-10px_30px_rgba(0,0,0,0.5)] select-none">
+      <nav className={navClasses}>
         <Link href="/admin" className={getLinkStyles('/admin')} prefetch={true}>
           <LayoutDashboard size={22} className={getIconStyles('/admin')} />
           <span className="text-[9px] font-black uppercase mt-1.5 tracking-tighter">Painel</span>
@@ -55,7 +56,7 @@ export const BottomNav = () => {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 w-full max-w-[480px] mx-auto z-50 flex justify-around items-center px-2 pb-safe h-20 bg-card/95 backdrop-blur-lg border-t border-white/5 rounded-t-2xl shadow-[0_-10px_30px_rgba(0,0,0,0.5)] select-none">
+    <nav className={navClasses}>
       <Link href="/" className={getLinkStyles('/')} prefetch={true}>
         <Home size={22} className={getIconStyles('/')} />
         <span className="text-[9px] font-black uppercase mt-1.5 tracking-tighter">Início</span>
