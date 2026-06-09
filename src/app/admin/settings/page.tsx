@@ -4,13 +4,15 @@
 import React, { useState, useMemo } from 'react';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
-import { Settings, Clock, Calendar, Loader2, Sparkles, Save } from 'lucide-react';
+import { Settings, Clock, Calendar, Loader2, Sparkles, Save, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useFirestore, useDoc } from '@/firebase';
+import { useFirestore, useDoc, useAuth } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/hooks/use-toast';
+import { signOut } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
 import { 
   Dialog, 
   DialogContent, 
@@ -21,6 +23,8 @@ import {
 
 export default function AdminSettingsPage() {
   const db = useFirestore();
+  const auth = useAuth();
+  const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeField, setActiveField] = useState<'interval' | 'cleaning' | 'combo' | null>(null);
@@ -68,13 +72,23 @@ export default function AdminSettingsPage() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.push('/login');
+    } catch (error) {
+      console.error('Erro ao sair:', error);
+      toast({ title: "Erro ao sair", description: "Tente novamente.", variant: "destructive" });
+    }
+  };
+
   return (
     <div className="min-h-screen">
       <Header />
       
-      <main className="pt-24 pb-32 px-5 space-y-10 max-w-[480px] mx-auto">
+      <main className="pt-24 pb-32 px-5 space-y-10 max-w-[480px] mx-auto text-center md:text-left">
         <header className="space-y-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 justify-center md:justify-start">
             <div className="h-[1px] w-8 bg-primary"></div>
             <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Configurações</span>
           </div>
@@ -94,7 +108,7 @@ export default function AdminSettingsPage() {
                   <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                     <Clock size={20} />
                   </div>
-                  <div>
+                  <div className="text-left">
                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Tempo de Corte</p>
                     <h4 className="text-xl font-black text-white mt-1">{globalSettings.appointmentInterval} min</h4>
                   </div>
@@ -113,7 +127,7 @@ export default function AdminSettingsPage() {
                   <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                     <Sparkles size={20} />
                   </div>
-                  <div>
+                  <div className="text-left">
                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Tempo de Barba</p>
                     <h4 className="text-xl font-black text-white mt-1">{globalSettings.cleaningDuration} min</h4>
                   </div>
@@ -132,7 +146,7 @@ export default function AdminSettingsPage() {
                   <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                     <Calendar size={20} />
                   </div>
-                  <div>
+                  <div className="text-left">
                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Tempo de Combo</p>
                     <h4 className="text-xl font-black text-white mt-1">{globalSettings.comboDuration} min</h4>
                   </div>
@@ -149,7 +163,7 @@ export default function AdminSettingsPage() {
           )}
         </section>
 
-        <section className="bg-primary/5 border border-primary/20 p-8 rounded-3xl relative overflow-hidden">
+        <section className="bg-primary/5 border border-primary/20 p-8 rounded-3xl relative overflow-hidden text-left">
           <div className="relative z-10 space-y-4">
             <h4 className="text-xl font-black text-white tracking-tight">Dica de Gestão</h4>
             <p className="text-xs font-medium text-muted-foreground leading-relaxed">
@@ -157,6 +171,16 @@ export default function AdminSettingsPage() {
             </p>
           </div>
           <Settings size={100} className="absolute -right-8 -bottom-8 text-primary/5 rotate-12 pointer-events-none" />
+        </section>
+
+        <section className="pt-6">
+          <button 
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-3 p-4 rounded-2xl border border-destructive/20 text-destructive hover:bg-destructive/5 transition-all font-black text-xs uppercase tracking-widest"
+          >
+            <LogOut size={18} />
+            Sair da Conta Admin
+          </button>
         </section>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
