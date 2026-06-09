@@ -27,7 +27,7 @@ export const BottomNav = () => {
     );
   };
 
-  const navClasses = "fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-[100] flex justify-around items-center px-2 h-20 bg-card/95 backdrop-blur-lg border-t border-white/5 shadow-[0_-10px_40px_rgba(0,0,0,0.8)] select-none pointer-events-auto";
+  const navClasses = "fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-40 flex justify-around items-center px-2 h-20 bg-card/95 backdrop-blur-lg border-t border-white/5 shadow-[0_-10px_40px_rgba(0,0,0,0.8)] select-none pointer-events-auto";
 
   if (isAdmin) {
     return (

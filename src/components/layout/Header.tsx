@@ -60,7 +60,7 @@ export const Header = () => {
   const showBackButton = pathname !== '/' && pathname !== '/admin';
 
   return (
-    <header className="flex justify-between items-center px-4 h-16 w-full z-50 fixed top-0 left-0 right-0 max-w-[480px] mx-auto bg-background/80 backdrop-blur-md border-b border-white/5">
+    <header className="flex justify-between items-center px-4 h-16 w-full z-40 fixed top-0 left-0 right-0 max-w-[480px] mx-auto bg-background/80 backdrop-blur-md border-b border-white/5">
       <div className="flex items-center gap-2">
         {showBackButton && (
           <button 
