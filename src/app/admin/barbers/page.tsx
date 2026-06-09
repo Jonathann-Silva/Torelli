@@ -6,10 +6,10 @@ import Image from 'next/image';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { UserPlus, Edit3, Settings, Coffee, Scissors, Calendar, Sparkles, Loader2, Camera, X, Clock } from 'lucide-react';
+import { UserPlus, Edit3, Coffee, Scissors, Sparkles, Loader2, Camera, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useCollection, useFirestore, useDoc } from '@/firebase';
-import { collection, addDoc, serverTimestamp, query, orderBy, doc, setDoc, updateDoc } from 'firebase/firestore';
+import { useCollection, useFirestore } from '@/firebase';
+import { collection, addDoc, serverTimestamp, query, orderBy, doc, updateDoc } from 'firebase/firestore';
 import { 
   Dialog, 
   DialogContent, 
@@ -29,8 +29,6 @@ export default function BarbersAdminPage() {
   const db = useFirestore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
-  const [activeSettingField, setActiveSettingField] = useState<'interval' | 'cleaning' | 'combo' | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isCompressing, setIsCompressing] = useState(false);
   const [editingBarberId, setEditingBarberId] = useState<string | null>(null);
@@ -43,17 +41,6 @@ export default function BarbersAdminPage() {
     status: 'active',
     image: 'barber1'
   });
-
-  const settingsRef = useMemo(() => doc(db, 'settings', 'global'), [db]);
-  const { data: settingsData, loading: settingsLoading } = useDoc(settingsRef);
-  
-  const [tempValue, setTempValue] = useState<number>(0);
-
-  const globalSettings = {
-    appointmentInterval: settingsData?.appointmentInterval || 15,
-    cleaningDuration: settingsData?.cleaningDuration || 10,
-    comboDuration: settingsData?.comboDuration || 60
-  };
 
   const barbersQuery = useMemo(() => {
     if (!db) return null;
@@ -136,39 +123,6 @@ export default function BarbersAdminPage() {
     }
   };
 
-  const openSettingsDialog = (field: 'interval' | 'cleaning' | 'combo') => {
-    setActiveSettingField(field);
-    if (field === 'interval') setTempValue(globalSettings.appointmentInterval);
-    else if (field === 'cleaning') setTempValue(globalSettings.cleaningDuration);
-    else if (field === 'combo') setTempValue(globalSettings.comboDuration);
-    setIsSettingsDialogOpen(true);
-  };
-
-  const handleSaveSetting = async () => {
-    if (!db) return;
-    
-    setIsSaving(true);
-    try {
-      const updatedSettings = { ...globalSettings };
-      if (activeSettingField === 'interval') updatedSettings.appointmentInterval = tempValue;
-      else if (activeSettingField === 'cleaning') updatedSettings.cleaningDuration = tempValue;
-      else if (activeSettingField === 'combo') updatedSettings.comboDuration = tempValue;
-
-      await setDoc(doc(db, 'settings', 'global'), updatedSettings, { merge: true });
-      
-      setIsSettingsDialogOpen(false);
-      toast({ 
-        title: "Configuração Atualizada", 
-        description: "o tempo foi salvo" 
-      });
-    } catch (error) {
-      console.error(error);
-      toast({ title: "Erro", description: "Não foi possível salvar a configuração.", variant: "destructive" });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   const getBarberImage = (imageKey: string) => {
     if (imageKey.startsWith('data:') || imageKey.startsWith('http')) return imageKey;
     const found = PlaceHolderImages.find(img => img.id === imageKey);
@@ -179,10 +133,10 @@ export default function BarbersAdminPage() {
     <div className="min-h-screen">
       <Header />
       
-      <main className="pt-24 pb-32 px-4 space-y-12">
+      <main className="pt-24 pb-32 px-4 space-y-10 max-w-[480px] mx-auto">
         <header className="flex flex-col items-center text-center gap-6">
           <div className="space-y-1">
-            <h2 className="text-4xl font-black text-white tracking-tighter">Gestão de Barbeiros</h2>
+            <h2 className="text-4xl font-black text-white tracking-tighter">Equipe de Barbeiros</h2>
             <p className="text-muted-foreground text-sm font-medium">Gerencie sua equipe, horários e disponibilidade.</p>
           </div>
 
@@ -190,10 +144,10 @@ export default function BarbersAdminPage() {
             <DialogTrigger asChild>
               <Button onClick={handleOpenAdd} className="bg-primary text-primary-foreground h-12 px-8 rounded-xl font-black uppercase tracking-widest amber-glow shadow-2xl">
                 <UserPlus size={20} className="mr-2" />
-                Adicionar Barbeiro
+                Novo Profissional
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-card border-white/10 text-foreground rounded-3xl">
+            <DialogContent className="bg-card border-white/10 text-foreground rounded-3xl mx-4">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-black tracking-tight text-primary uppercase">
                   {editingBarberId ? "Editar Barbeiro" : "Novo Barbeiro"}
@@ -217,13 +171,8 @@ export default function BarbersAdminPage() {
                     ) : (
                       <Camera className="text-muted-foreground group-hover:text-primary" size={24} />
                     )}
-                    {!isCompressing && (
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Sparkles size={16} className="text-white" />
-                      </div>
-                    )}
                   </div>
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-primary mt-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-primary mt-2 cursor-pointer">
                     {isCompressing ? "Processando..." : "Alterar Foto"}
                   </Label>
                   <input 
@@ -299,7 +248,7 @@ export default function BarbersAdminPage() {
           </Dialog>
         </header>
 
-        <div className="grid grid-cols-1 gap-8">
+        <div className="grid grid-cols-1 gap-6">
           {barbersLoading ? (
             <div className="flex justify-center py-20">
               <Loader2 className="animate-spin text-primary" size={48} />
@@ -311,13 +260,13 @@ export default function BarbersAdminPage() {
               
               return (
                 <div key={barber.id} className={cn(
-                  "premium-card p-6 rounded-[2.5rem] flex flex-col gap-6",
+                  "premium-card p-6 rounded-[2rem] flex flex-col gap-6",
                   !isActive && "opacity-60 grayscale-[0.5]"
                 )}>
                   <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-5">
+                    <div className="flex items-center gap-4">
                       <div className={cn(
-                        "w-20 h-20 rounded-2xl overflow-hidden relative border-2 shrink-0 transition-all",
+                        "w-16 h-16 rounded-2xl overflow-hidden relative border-2 shrink-0 transition-all",
                         isActive ? "border-primary shadow-[0_0_20px_rgba(255,191,0,0.1)]" : "border-white/10"
                       )}>
                         <Image 
@@ -329,79 +278,48 @@ export default function BarbersAdminPage() {
                       </div>
                       <div className="space-y-1 min-w-0">
                         <h3 className={cn(
-                          "text-xl font-black tracking-tighter leading-none truncate",
+                          "text-lg font-black tracking-tighter leading-none truncate",
                           isActive ? "text-primary" : "text-white/60"
                         )}>{barber.name}</h3>
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] line-clamp-1">{barber.specialty}</p>
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest line-clamp-1">{barber.specialty}</p>
                         <div className="flex items-center gap-1.5 pt-1">
                           <span className={cn(
                             "w-1.5 h-1.5 rounded-full",
                             isActive ? "bg-primary animate-pulse" : "bg-destructive"
                           )}></span>
                           <span className={cn(
-                            "text-[9px] font-black uppercase tracking-[0.15em]",
+                            "text-[8px] font-black uppercase tracking-widest",
                             isActive ? "text-primary" : "text-destructive"
                           )}>
-                            {isActive ? 'Em Operação' : 'Indisponível'}
+                            {isActive ? 'Ativo' : 'Indisponível'}
                           </span>
                         </div>
                       </div>
                     </div>
                     <button 
                       onClick={() => handleOpenEdit(barber)}
-                      className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-white/10 transition-all focus:outline-none shrink-0"
+                      className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-muted-foreground hover:text-primary transition-all shrink-0"
                     >
                       <Edit3 size={18} />
                     </button>
                   </div>
 
-                  <div className="h-px bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
+                  <div className="h-px bg-white/5"></div>
 
-                  <div className="space-y-5">
-                    <div className="flex justify-between items-center px-1">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Clock size={14} className="text-primary" />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Escala de Trabalho</span>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <Clock size={12} className="text-primary" />
+                        <span className="text-[8px] font-black uppercase tracking-widest">Escala</span>
                       </div>
-                      <span className={cn(
-                        "text-xs font-bold",
-                        isActive ? "text-white" : "text-muted-foreground/50"
-                      )}>{barber.schedule}</span>
+                      <span className="text-xs font-bold text-white truncate block">{barber.schedule}</span>
                     </div>
-
-                    <div className={cn(
-                      "grid grid-cols-7 gap-1.5 px-1",
-                      !isActive && "opacity-30"
-                    )}>
-                      {['S', 'T', 'Q', 'Q', 'S', 'S', 'D'].map((day, i) => {
-                        const scheduleLower = (barber.schedule || "").toLowerCase();
-                        const isWorking = i < 5 || 
-                                          (i === 5 && (scheduleLower.includes('sab') || scheduleLower.includes('sáb'))) ||
-                                          (i === 6 && scheduleLower.includes('dom'));
-                        return (
-                          <div 
-                            key={i} 
-                            className={cn(
-                              "flex items-center justify-center h-10 rounded-xl text-[10px] font-black border transition-all",
-                              isWorking && isActive 
-                              ? "bg-primary/10 border-primary/20 text-primary shadow-[inset_0_0_10px_rgba(255,191,0,0.05)]" 
-                              : "bg-white/[0.02] border-white/5 text-white/20"
-                            )}
-                          >
-                            {day}
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    <div className="flex items-center gap-3 bg-secondary/50 p-4 rounded-2xl border border-white/5">
-                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                        <Coffee size={16} />
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <Coffee size={12} className="text-primary" />
+                        <span className="text-[8px] font-black uppercase tracking-widest">Almoço</span>
                       </div>
-                      <div className="flex flex-col">
-                        <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Horário de Pausa</span>
-                        <span className="text-xs font-bold text-white">{barber.break}</span>
-                      </div>
+                      <span className="text-xs font-bold text-white block">{barber.break}</span>
                     </div>
                   </div>
                 </div>
@@ -414,100 +332,6 @@ export default function BarbersAdminPage() {
             </div>
           )}
         </div>
-
-        {/* Global Settings Section */}
-        <section className="bg-secondary/30 border border-white/5 rounded-3xl p-8 space-y-8">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-              <Calendar size={24} />
-            </div>
-            <h4 className="text-2xl font-black text-white tracking-tight">Configurações Globais</h4>
-          </div>
-
-          {settingsLoading ? (
-            <div className="flex justify-center py-10">
-              <Loader2 className="animate-spin text-primary" />
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-6">
-              <div className="bg-card/50 p-6 rounded-2xl border border-white/5 space-y-4">
-                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Tempo de corte</p>
-                <div className="flex items-center justify-between">
-                  <span className="text-2xl font-black text-primary">{globalSettings.appointmentInterval} min</span>
-                  <button 
-                    onClick={() => openSettingsDialog('interval')}
-                    className="text-muted-foreground hover:text-primary transition-colors focus:outline-none"
-                  >
-                    <Settings size={18} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="bg-card/50 p-6 rounded-2xl border border-white/5 space-y-4">
-                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Tempo de barba</p>
-                <div className="flex items-center justify-between">
-                  <span className="text-2xl font-black text-primary">{globalSettings.cleaningDuration} min</span>
-                  <button 
-                    onClick={() => openSettingsDialog('cleaning')}
-                    className="text-muted-foreground hover:text-primary transition-colors focus:outline-none"
-                  >
-                    <Settings size={18} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="bg-card/50 p-6 rounded-2xl border border-white/5 space-y-4">
-                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Combo</p>
-                <div className="flex items-center justify-between">
-                  <span className="text-2xl font-black text-primary">{globalSettings.comboDuration} min</span>
-                  <button 
-                    onClick={() => openSettingsDialog('combo')}
-                    className="text-muted-foreground hover:text-primary transition-colors focus:outline-none"
-                  >
-                    <Settings size={18} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </section>
-
-        <Dialog open={isSettingsDialogOpen} onOpenChange={setIsSettingsDialogOpen}>
-          <DialogContent className="bg-card border-white/10 text-foreground rounded-3xl">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-black tracking-tight text-primary uppercase">
-                {activeSettingField === 'interval' ? 'Tempo de corte' : 
-                 activeSettingField === 'cleaning' ? 'Tempo de barba' : 'Tempo do Combo'}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                  {activeSettingField === 'interval' ? 'Minutos entre cada horário' : 
-                   activeSettingField === 'cleaning' ? 'Minutos para a barba' : 'Minutos para Cabelo + Barba'}
-                </Label>
-                <div className="flex items-center gap-4">
-                  <Input 
-                    type="number"
-                    value={tempValue} 
-                    onChange={(e) => setTempValue(parseInt(e.target.value) || 0)}
-                    className="bg-secondary/50 border-white/5 rounded-xl h-12 flex-1"
-                  />
-                  <span className="text-xs font-bold text-muted-foreground">min</span>
-                </div>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button 
-                onClick={handleSaveSetting} 
-                disabled={isSaving}
-                className="w-full bg-primary text-primary-foreground font-black uppercase tracking-widest h-14 rounded-2xl"
-              >
-                {isSaving ? <Loader2 className="animate-spin" /> : "Salvar Configuração"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </main>
 
       <BottomNav />

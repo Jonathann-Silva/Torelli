@@ -2,7 +2,7 @@
 "use client"
 
 import React from 'react';
-import { Home, Calendar, User, LayoutDashboard, Scissors, Users, ClipboardList } from 'lucide-react';
+import { Home, Calendar, User, LayoutDashboard, Scissors, Users, ClipboardList, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -34,7 +34,7 @@ export const BottomNav = () => {
       <nav className={navClasses}>
         <Link href="/admin" className={getLinkStyles('/admin')} prefetch={true}>
           <LayoutDashboard size={22} className={getIconStyles('/admin')} />
-          <span className="text-[9px] font-black uppercase mt-1.5 tracking-tighter">Painel</span>
+          <span className="text-[9px] font-black uppercase mt-1.5 tracking-tighter">Geral</span>
         </Link>
         
         <Link href="/admin/schedule" className={getLinkStyles('/admin/schedule')} prefetch={true}>
@@ -42,14 +42,19 @@ export const BottomNav = () => {
           <span className="text-[9px] font-black uppercase mt-1.5 tracking-tighter">Agenda</span>
         </Link>
 
+        <Link href="/admin/services" className={getLinkStyles('/admin/services')} prefetch={true}>
+          <Scissors size={22} className={getIconStyles('/admin/services')} />
+          <span className="text-[9px] font-black uppercase mt-1.5 tracking-tighter">Serviços</span>
+        </Link>
+
         <Link href="/admin/barbers" className={getLinkStyles('/admin/barbers')} prefetch={true}>
           <Users size={22} className={getIconStyles('/admin/barbers')} />
           <span className="text-[9px] font-black uppercase mt-1.5 tracking-tighter">Equipe</span>
         </Link>
-        
-        <Link href="/admin/services" className={getLinkStyles('/admin/services')} prefetch={true}>
-          <Scissors size={22} className={getIconStyles('/admin/services')} />
-          <span className="text-[9px] font-black uppercase mt-1.5 tracking-tighter">Serviços</span>
+
+        <Link href="/admin/settings" className={getLinkStyles('/admin/settings')} prefetch={true}>
+          <Settings size={22} className={getIconStyles('/admin/settings')} />
+          <span className="text-[9px] font-black uppercase mt-1.5 tracking-tighter">Ajustes</span>
         </Link>
       </nav>
     );

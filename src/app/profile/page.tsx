@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useMemo } from 'react';
@@ -17,7 +18,8 @@ import {
   LogOut, 
   ChevronRight,
   CheckCircle2,
-  ShieldCheck
+  ShieldCheck,
+  Settings
 } from 'lucide-react';
 import { useUser, useDoc, useFirestore, useAuth } from '@/firebase';
 import { doc } from 'firebase/firestore';
@@ -84,9 +86,11 @@ export default function ProfilePage() {
               )}
             </div>
             {isAdmin && (
-              <div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground p-1.5 rounded-lg shadow-lg">
-                <ShieldCheck size={16} />
-              </div>
+              <Link href="/admin">
+                <button className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground p-1.5 rounded-lg shadow-lg amber-glow hover:scale-110 transition-transform">
+                  <ShieldCheck size={18} />
+                </button>
+              </Link>
             )}
           </div>
           <h2 className="text-2xl font-black text-white tracking-tight">{displayName}</h2>
@@ -95,20 +99,24 @@ export default function ProfilePage() {
 
         {/* Admin Access Quick Link */}
         {isAdmin && (
-          <Link href="/admin">
-            <button className="w-full bg-primary/10 border border-primary/20 p-4 rounded-2xl flex items-center justify-between group hover:bg-primary/20 transition-all">
-              <div className="flex items-center gap-4">
+          <div className="grid grid-cols-2 gap-3">
+            <Link href="/admin">
+              <button className="w-full bg-primary/10 border border-primary/20 p-4 rounded-2xl flex flex-col items-center gap-2 group hover:bg-primary/20 transition-all text-center">
                 <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary">
                   <ShieldCheck size={20} />
                 </div>
-                <div className="text-left">
-                  <span className="text-sm font-black text-white uppercase tracking-tighter">Painel Administrativo</span>
-                  <p className="text-[9px] font-bold text-primary uppercase tracking-widest">Acesso Restrito</p>
+                <span className="text-[10px] font-black text-white uppercase tracking-tighter">Painel Admin</span>
+              </button>
+            </Link>
+            <Link href="/admin/settings">
+              <button className="w-full bg-secondary/30 border border-white/5 p-4 rounded-2xl flex flex-col items-center gap-2 group hover:bg-secondary/50 transition-all text-center">
+                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-muted-foreground group-hover:text-primary">
+                  <Settings size={20} />
                 </div>
-              </div>
-              <ChevronRight size={18} className="text-primary" />
-            </button>
-          </Link>
+                <span className="text-[10px] font-black text-white uppercase tracking-tighter">Configurações</span>
+              </button>
+            </Link>
+          </div>
         )}
 
         {/* Digital Loyalty Card Section */}
