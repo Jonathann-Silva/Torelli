@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useMemo, useRef } from 'react';
@@ -5,7 +6,7 @@ import Image from 'next/image';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { UserPlus, Edit3, Settings, Coffee, Scissors, Calendar, Sparkles, Loader2, Camera, X } from 'lucide-react';
+import { UserPlus, Edit3, Settings, Coffee, Scissors, Calendar, Sparkles, Loader2, Camera, X, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCollection, useFirestore, useDoc } from '@/firebase';
 import { collection, addDoc, serverTimestamp, query, orderBy, doc, setDoc, updateDoc } from 'firebase/firestore';
@@ -309,10 +310,16 @@ export default function BarbersAdminPage() {
               const isActive = barber.status === 'active';
               
               return (
-                <div key={barber.id} className={`premium-card p-8 rounded-3xl flex flex-col gap-6 ${!isActive ? 'opacity-80' : ''}`}>
+                <div key={barber.id} className={cn(
+                  "premium-card p-6 rounded-[2.5rem] flex flex-col gap-6",
+                  !isActive && "opacity-60 grayscale-[0.5]"
+                )}>
                   <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-6">
-                      <div className={`w-24 h-24 rounded-2xl overflow-hidden relative border-2 ${isActive ? 'border-primary/20 shadow-xl shadow-primary/10' : 'border-white/10 grayscale'}`}>
+                    <div className="flex items-center gap-5">
+                      <div className={cn(
+                        "w-20 h-20 rounded-2xl overflow-hidden relative border-2 transition-all",
+                        isActive ? "border-primary shadow-[0_0_20px_rgba(255,191,0,0.1)]" : "border-white/10"
+                      )}>
                         <Image 
                           src={barberImg} 
                           alt={barber.name} 
@@ -321,43 +328,66 @@ export default function BarbersAdminPage() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <h3 className={`text-2xl font-black tracking-tight ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>{barber.name}</h3>
+                        <h3 className={cn(
+                          "text-xl font-black tracking-tighter leading-none",
+                          isActive ? "text-primary" : "text-white/60"
+                        )}>{barber.name}</h3>
                         <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">{barber.specialty}</p>
-                        <div className="flex items-center gap-2 pt-2">
-                          <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-primary animate-pulse' : 'bg-destructive'}`}></span>
-                          <span className={`text-[10px] font-black uppercase tracking-widest ${isActive ? 'text-primary' : 'text-destructive'}`}>
-                            {isActive ? 'Ativo' : 'Inativo'}
+                        <div className="flex items-center gap-1.5 pt-1">
+                          <span className={cn(
+                            "w-1.5 h-1.5 rounded-full",
+                            isActive ? "bg-primary animate-pulse" : "bg-destructive"
+                          )}></span>
+                          <span className={cn(
+                            "text-[9px] font-black uppercase tracking-[0.15em]",
+                            isActive ? "text-primary" : "text-destructive"
+                          )}>
+                            {isActive ? 'Em Operação' : 'Indisponível'}
                           </span>
                         </div>
                       </div>
                     </div>
                     <button 
                       onClick={() => handleOpenEdit(barber)}
-                      className="text-muted-foreground hover:text-primary transition-colors focus:outline-none"
+                      className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-white/10 transition-all focus:outline-none"
                     >
-                      <Edit3 size={20} />
+                      <Edit3 size={18} />
                     </button>
                   </div>
 
-                  <div className="h-px bg-white/5"></div>
+                  <div className="h-px bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
 
-                  <div className="space-y-6">
-                    <div className="flex justify-between items-center">
-                      <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Horários de Trabalho</span>
-                      <span className={`text-xs font-bold ${isActive ? 'text-primary' : 'text-muted-foreground/50'}`}>{barber.schedule}</span>
+                  <div className="space-y-5">
+                    <div className="flex justify-between items-center px-1">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Clock size={14} className="text-primary" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">Escala de Trabalho</span>
+                      </div>
+                      <span className={cn(
+                        "text-xs font-bold",
+                        isActive ? "text-white" : "text-muted-foreground/50"
+                      )}>{barber.schedule}</span>
                     </div>
 
-                    <div className={`grid grid-cols-7 gap-2 ${!isActive ? 'opacity-30' : ''}`}>
+                    <div className={cn(
+                      "grid grid-cols-7 gap-1.5 px-1",
+                      !isActive && "opacity-30"
+                    )}>
                       {['S', 'T', 'Q', 'Q', 'S', 'S', 'D'].map((day, i) => {
-                        const isWorking = i < 5;
+                        const scheduleLower = (barber.schedule || "").toLowerCase();
+                        // Lógica para destacar dias: Seg-Sex (0-4), Sab (5), Dom (6)
+                        const isWorking = i < 5 || 
+                                          (i === 5 && (scheduleLower.includes('sab') || scheduleLower.includes('sáb'))) ||
+                                          (i === 6 && scheduleLower.includes('dom'));
                         return (
                           <div 
                             key={i} 
-                            className={`flex items-center justify-center h-10 rounded-xl text-[10px] font-black border transition-all ${
+                            className={cn(
+                              "flex items-center justify-center h-10 rounded-xl text-[10px] font-black border transition-all",
                               isWorking && isActive 
-                              ? 'bg-primary/10 border-primary/20 text-primary' 
-                              : 'bg-secondary/50 border-white/5 text-muted-foreground'
-                            }`}
+                              ? "bg-primary/10 border-primary/20 text-primary shadow-[inset_0_0_10px_rgba(255,191,0,0.05)]" 
+                              : "bg-white/[0.02] border-white/5 text-white/20"
+                            )}
                           >
                             {day}
                           </div>
@@ -365,9 +395,14 @@ export default function BarbersAdminPage() {
                       })}
                     </div>
 
-                    <div className="flex items-center gap-3 bg-secondary/30 p-4 rounded-2xl border border-white/5">
-                      <Coffee size={18} className="text-primary" />
-                      <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Intervalo: {barber.break}</span>
+                    <div className="flex items-center gap-3 bg-secondary/50 p-4 rounded-2xl border border-white/5">
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                        <Coffee size={16} />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Horário de Pausa</span>
+                        <span className="text-xs font-bold text-white">{barber.break}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
