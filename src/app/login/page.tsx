@@ -50,10 +50,18 @@ export default function LoginPage() {
         router.push('/');
       }
     } catch (error: any) {
-      console.error(error);
+      // Tratamento aprimorado para códigos de erro modernos do Firebase
       let message = "E-mail ou senha incorretos.";
-      if (error.code === 'auth/user-not-found') message = "Usuário não encontrado.";
-      if (error.code === 'auth/wrong-password') message = "Senha incorreta.";
+      
+      if (error.code === 'auth/invalid-credential') {
+        message = "Credenciais inválidas. Verifique se o e-mail e a senha estão corretos.";
+      } else if (error.code === 'auth/user-not-found') {
+        message = "Usuário não encontrado. Verifique o e-mail digitado.";
+      } else if (error.code === 'auth/wrong-password') {
+        message = "Senha incorreta. Tente novamente.";
+      } else if (error.code === 'auth/too-many-requests') {
+        message = "Muitas tentativas malsucedidas. Tente novamente mais tarde.";
+      }
       
       toast({
         variant: "destructive",
