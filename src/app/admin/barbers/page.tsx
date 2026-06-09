@@ -179,7 +179,7 @@ export default function BarbersAdminPage() {
     <div className="min-h-screen">
       <Header />
       
-      <main className="pt-24 pb-32 px-4 md:px-margin max-w-container-max mx-auto space-y-12">
+      <main className="pt-24 pb-32 px-4 space-y-12">
         <header className="flex flex-col items-center text-center gap-6">
           <div className="space-y-1">
             <h2 className="text-4xl font-black text-white tracking-tighter">Gestão de Barbeiros</h2>
@@ -299,9 +299,9 @@ export default function BarbersAdminPage() {
           </Dialog>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 gap-8">
           {barbersLoading ? (
-            <div className="col-span-full flex justify-center py-20">
+            <div className="flex justify-center py-20">
               <Loader2 className="animate-spin text-primary" size={48} />
             </div>
           ) : barbers.length > 0 ? (
@@ -317,7 +317,7 @@ export default function BarbersAdminPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-5">
                       <div className={cn(
-                        "w-20 h-20 rounded-2xl overflow-hidden relative border-2 transition-all",
+                        "w-20 h-20 rounded-2xl overflow-hidden relative border-2 shrink-0 transition-all",
                         isActive ? "border-primary shadow-[0_0_20px_rgba(255,191,0,0.1)]" : "border-white/10"
                       )}>
                         <Image 
@@ -327,12 +327,12 @@ export default function BarbersAdminPage() {
                           className="object-cover"
                         />
                       </div>
-                      <div className="space-y-1">
+                      <div className="space-y-1 min-w-0">
                         <h3 className={cn(
-                          "text-xl font-black tracking-tighter leading-none",
+                          "text-xl font-black tracking-tighter leading-none truncate",
                           isActive ? "text-primary" : "text-white/60"
                         )}>{barber.name}</h3>
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">{barber.specialty}</p>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] line-clamp-1">{barber.specialty}</p>
                         <div className="flex items-center gap-1.5 pt-1">
                           <span className={cn(
                             "w-1.5 h-1.5 rounded-full",
@@ -349,7 +349,7 @@ export default function BarbersAdminPage() {
                     </div>
                     <button 
                       onClick={() => handleOpenEdit(barber)}
-                      className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-white/10 transition-all focus:outline-none"
+                      className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-white/10 transition-all focus:outline-none shrink-0"
                     >
                       <Edit3 size={18} />
                     </button>
@@ -375,7 +375,6 @@ export default function BarbersAdminPage() {
                     )}>
                       {['S', 'T', 'Q', 'Q', 'S', 'S', 'D'].map((day, i) => {
                         const scheduleLower = (barber.schedule || "").toLowerCase();
-                        // Lógica para destacar dias: Seg-Sex (0-4), Sab (5), Dom (6)
                         const isWorking = i < 5 || 
                                           (i === 5 && (scheduleLower.includes('sab') || scheduleLower.includes('sáb'))) ||
                                           (i === 6 && scheduleLower.includes('dom'));
@@ -422,7 +421,7 @@ export default function BarbersAdminPage() {
             <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
               <Calendar size={24} />
             </div>
-            <h4 className="text-2xl font-black text-white tracking-tight">Configurações de Pausa Global</h4>
+            <h4 className="text-2xl font-black text-white tracking-tight">Configurações Globais</h4>
           </div>
 
           {settingsLoading ? (
@@ -430,7 +429,7 @@ export default function BarbersAdminPage() {
               <Loader2 className="animate-spin text-primary" />
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6">
               <div className="bg-card/50 p-6 rounded-2xl border border-white/5 space-y-4">
                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">Tempo de corte</p>
                 <div className="flex items-center justify-between">
