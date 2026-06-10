@@ -1,10 +1,12 @@
+
 "use client"
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Scissors, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth, useUser } from '@/firebase';
@@ -19,7 +21,6 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  // Redirecionamento automático se o usuário já estiver logado
   useEffect(() => {
     if (!userLoading && user) {
       if (user.email === 'admin@gmail.com') {
@@ -43,14 +44,12 @@ export default function LoginPage() {
         description: "Login realizado com sucesso.",
       });
 
-      // Redireciona imediatamente após o login bem-sucedido baseado no e-mail
       if (loggedUser.email === 'admin@gmail.com') {
         router.push('/admin');
       } else {
         router.push('/');
       }
     } catch (error: any) {
-      // Tratamento aprimorado para códigos de erro modernos do Firebase
       let message = "E-mail ou senha incorretos.";
       
       if (error.code === 'auth/invalid-credential') {
@@ -85,8 +84,13 @@ export default function LoginPage() {
     <div className="min-h-screen bg-black">
       <main className="max-w-[480px] mx-auto px-6 pt-24 space-y-12">
         <div className="text-center space-y-4">
-          <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center text-primary mx-auto mb-6 amber-glow">
-            <Scissors size={40} />
+          <div className="relative w-24 h-24 mx-auto mb-6 amber-glow rounded-3xl overflow-hidden bg-primary/5 p-2">
+            <Image 
+              src="https://picsum.photos/seed/torelli-icon/512/512" 
+              alt="Logo Torelli" 
+              fill 
+              className="object-contain p-2"
+            />
           </div>
           <h2 className="text-4xl font-black text-white tracking-tighter">Barbearia Torelli</h2>
           <p className="text-muted-foreground text-sm">Acesse sua conta para gerenciar seus agendamentos premium.</p>

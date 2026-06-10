@@ -2,10 +2,11 @@
 "use client"
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Scissors, Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/firebase';
@@ -29,16 +30,13 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // 1. Criar usuário no Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // 2. Atualizar o nome do perfil no Auth
       await updateProfile(user, {
         displayName: name
       });
 
-      // 3. Criar o documento do usuário no Firestore
       await setDoc(doc(db, 'users', user.uid), {
         displayName: name,
         email: email,
@@ -78,8 +76,13 @@ export default function RegisterPage() {
         </Link>
 
         <div className="text-center space-y-4">
-          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mx-auto mb-4 amber-glow">
-            <Scissors size={32} />
+          <div className="relative w-20 h-20 mx-auto mb-4 amber-glow rounded-3xl overflow-hidden bg-primary/5 p-2">
+            <Image 
+              src="https://picsum.photos/seed/torelli-icon/512/512" 
+              alt="Logo Torelli" 
+              fill 
+              className="object-contain p-1"
+            />
           </div>
           <h2 className="text-3xl font-black text-white tracking-tighter">Criar Conta</h2>
           <p className="text-muted-foreground text-sm">Junte-se ao clube e comece a pontuar agora mesmo.</p>
