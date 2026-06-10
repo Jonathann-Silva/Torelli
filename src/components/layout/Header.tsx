@@ -24,7 +24,6 @@ export const Header = () => {
   const pathname = usePathname();
   const router = useRouter();
   const isAdmin = pathname.startsWith('/admin');
-  const managerImg = PlaceHolderImages.find(img => img.id === 'manager');
 
   const notificationsQuery = useMemo(() => {
     if (!db) return null;
@@ -85,7 +84,7 @@ export const Header = () => {
         )}
       </div>
       
-      <div className="flex items-center gap-3">
+      <div className="flex items-center">
         <Popover>
           <PopoverTrigger asChild>
             <button className="p-2 text-muted-foreground hover:text-primary transition-colors relative outline-none">
@@ -127,10 +126,6 @@ export const Header = () => {
             </ScrollArea>
           </PopoverContent>
         </Popover>
-        
-        <div className="w-8 h-8 rounded-full bg-secondary border border-white/10 overflow-hidden relative">
-          {managerImg && <Image src={user?.photoURL || managerImg.imageUrl} alt="P" fill className="object-cover" />}
-        </div>
       </div>
     </header>
   );
