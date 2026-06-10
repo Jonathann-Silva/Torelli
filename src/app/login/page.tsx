@@ -21,6 +21,9 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  // Link direto para o logotipo (raw=1 garante que o Next.js consiga baixar a imagem)
+  const logoUrl = "https://www.dropbox.com/scl/fi/70fwazrji2098g5fwn6de/Logo.jpg?rlkey=jxz0q85l1qo54pnk0wa2huiqm&st=ead76oo8&raw=1";
+
   useEffect(() => {
     if (!userLoading && user) {
       if (user.email === 'admin@gmail.com') {
@@ -86,10 +89,11 @@ export default function LoginPage() {
         <div className="text-center space-y-4">
           <div className="relative w-24 h-24 mx-auto mb-6 amber-glow rounded-3xl overflow-hidden bg-primary/5 p-2">
             <Image 
-              src="https://picsum.photos/seed/torelli-icon/512/512" 
+              src={logoUrl} 
               alt="Logo Torelli" 
               fill 
-              className="object-contain p-2"
+              className="object-cover"
+              priority
             />
           </div>
           <h2 className="text-4xl font-black text-white tracking-tighter">Barbearia Torelli</h2>

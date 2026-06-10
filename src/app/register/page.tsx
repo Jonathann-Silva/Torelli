@@ -25,6 +25,8 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  const logoUrl = "https://www.dropbox.com/scl/fi/70fwazrji2098g5fwn6de/Logo.jpg?rlkey=jxz0q85l1qo54pnk0wa2huiqm&st=ead76oo8&raw=1";
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -78,10 +80,10 @@ export default function RegisterPage() {
         <div className="text-center space-y-4">
           <div className="relative w-20 h-20 mx-auto mb-4 amber-glow rounded-3xl overflow-hidden bg-primary/5 p-2">
             <Image 
-              src="https://picsum.photos/seed/torelli-icon/512/512" 
+              src={logoUrl} 
               alt="Logo Torelli" 
               fill 
-              className="object-contain p-1"
+              className="object-cover"
             />
           </div>
           <h2 className="text-3xl font-black text-white tracking-tighter">Criar Conta</h2>
