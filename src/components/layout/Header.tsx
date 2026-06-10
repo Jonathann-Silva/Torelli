@@ -26,6 +26,8 @@ export const Header = () => {
   const isAdmin = pathname.startsWith('/admin');
   const managerImg = PlaceHolderImages.find(img => img.id === 'manager');
 
+  const logoUrl = "https://www.dropbox.com/scl/fi/70fwazrji2098g5fwn6de/Logo.jpg?rlkey=jxz0q85l1qo54pnk0wa2huiqm&st=ead76oo8&raw=1";
+
   const notificationsQuery = useMemo(() => {
     if (!db) return null;
     
@@ -73,17 +75,32 @@ export const Header = () => {
         
         {isAdmin ? (
           <div className="flex items-center gap-2">
-            <div className="bg-primary/20 p-1.5 rounded-lg text-primary">
-              <ShieldCheck size={18} />
+            <div className="relative w-8 h-8 rounded-lg overflow-hidden amber-glow bg-primary/5">
+              <Image 
+                src={logoUrl} 
+                alt="Logo" 
+                fill 
+                className="object-cover"
+              />
             </div>
             <Link href="/admin">
               <h1 className="font-headline text-lg font-black tracking-tighter text-white leading-none">ADMIN <span className="text-primary">Torelli</span></h1>
             </Link>
           </div>
         ) : (
-          <Link href="/">
-            <h1 className="font-headline text-xl font-extrabold tracking-tighter text-primary leading-none">Barbearia Torelli</h1>
-          </Link>
+          <div className="flex items-center gap-2">
+            <div className="relative w-8 h-8 rounded-lg overflow-hidden amber-glow bg-primary/5">
+              <Image 
+                src={logoUrl} 
+                alt="Logo" 
+                fill 
+                className="object-cover"
+              />
+            </div>
+            <Link href="/">
+              <h1 className="font-headline text-xl font-extrabold tracking-tighter text-primary leading-none">Torelli</h1>
+            </Link>
+          </div>
         )}
       </div>
       

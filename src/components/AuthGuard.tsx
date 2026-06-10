@@ -1,9 +1,11 @@
+
 'use client';
 
 import { useUser } from '@/firebase';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Loader2, Scissors } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import Image from 'next/image';
 
 /**
  * Componente que protege todas as rotas da aplicação.
@@ -17,6 +19,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+
+  const logoUrl = "https://www.dropbox.com/scl/fi/70fwazrji2098g5fwn6de/Logo.jpg?rlkey=jxz0q85l1qo54pnk0wa2huiqm&st=ead76oo8&raw=1";
 
   useEffect(() => {
     setMounted(true);
@@ -53,8 +57,15 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-6">
         <div className="relative">
-          <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center text-primary amber-glow animate-pulse">
-            <Scissors size={40} />
+          <div className="w-24 h-24 bg-primary/10 rounded-3xl flex items-center justify-center text-primary amber-glow animate-pulse overflow-hidden p-2">
+            <Image 
+              src={logoUrl} 
+              alt="Logo Torelli" 
+              width={80} 
+              height={80} 
+              className="object-cover rounded-2xl"
+              priority
+            />
           </div>
           <div className="absolute -inset-1 bg-primary/20 rounded-3xl blur-xl animate-pulse"></div>
         </div>
