@@ -2,8 +2,8 @@ import { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Torelli Agendamentos',
-    short_name: 'Torelli',
+    name: 'Barber Torelli',
+    short_name: 'Barber Torelli',
     description: 'Barbearia Premium Torelli - Agendamentos online',
     start_url: '/',
     display: 'standalone',
