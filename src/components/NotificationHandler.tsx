@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect } from 'react';
@@ -14,49 +13,57 @@ export function NotificationHandler() {
   useEffect(() => {
     if (!user || !db) return;
 
-    const requestPermission = async () => {
+    const setupNotifications = async () => {
       try {
-        if (!('Notification' in window)) {
-          console.warn('Este navegador não suporta notificações desktop');
+        // Verifica se o navegador suporta as APIs necessárias
+        if (!('serviceWorker' in navigator) || !('Notification' in window)) {
+          console.warn('Este navegador não suporta notificações push.');
           return;
         }
 
+        // Solicita permissão
         const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          console.log('Permissão de notificação não concedida.');
+          return;
+        }
+
+        // Registra o Service Worker explicitamente
+        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+          scope: '/'
+        });
         
-        if (permission === 'granted') {
-          console.log('Permissão de notificação concedida.');
+        // Aguarda o Service Worker estar ativo
+        await navigator.serviceWorker.ready;
+
+        const messaging = await getFirebaseMessaging();
+        if (!messaging) return;
+
+        // Obtém o token usando a chave VAPID
+        const currentToken = await getToken(messaging, {
+          vapidKey: firebaseConfig.vapidKey,
+          serviceWorkerRegistration: registration,
+        });
+
+        if (currentToken) {
+          console.log('Token FCM obtido com sucesso!');
           
-          // Registrar o Service Worker manualmente para garantir que ele esteja pronto antes do getToken
-          if ('serviceWorker' in navigator) {
-            const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-            console.log('Service Worker registrado com sucesso:', registration.scope);
-
-            const messaging = await getFirebaseMessaging();
-            if (!messaging) return;
-
-            // Obter o token usando a chave VAPID explicitamente
-            const currentToken = await getToken(messaging, {
-              vapidKey: firebaseConfig.vapidKey,
-              serviceWorkerRegistration: registration,
-            });
-
-            if (currentToken) {
-              console.log('Token FCM (VAPID) obtido com sucesso!');
-              const userRef = doc(db, 'users', user.uid);
-              await updateDoc(userRef, {
-                fcmToken: currentToken,
-                updatedAt: new Date().toISOString()
-              });
-            }
-          }
+          // Salva o token no Firestore do usuário
+          const userRef = doc(db, 'users', user.uid);
+          await updateDoc(userRef, {
+            fcmToken: currentToken,
+            updatedAt: new Date().toISOString()
+          });
+        } else {
+          console.log('Nenhum token disponível. Verifique as configurações de mensagens do navegador.');
         }
       } catch (error) {
-        console.error('Erro ao configurar notificações push:', error);
+        console.error('Erro ao configurar notificações FCM:', error);
       }
     };
 
-    // Pequeno atraso para não impactar o carregamento inicial da página
-    const timer = setTimeout(requestPermission, 2000);
+    // Executa com um pequeno atraso para não pesar no carregamento inicial
+    const timer = setTimeout(setupNotifications, 3000);
     return () => clearTimeout(timer);
   }, [user, db]);
 
