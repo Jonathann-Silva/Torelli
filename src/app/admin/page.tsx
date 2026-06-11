@@ -11,6 +11,7 @@ import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy, limit, doc, updateDoc, getDoc, increment, addDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
+import { sendPushNotification } from '@/app/actions/send-push';
 
 export default function AdminDashboard() {
   const db = useFirestore();
@@ -47,22 +48,34 @@ export default function AdminDashboard() {
         }
       }
 
-      // 3. Criar Notificação para o Cliente
+      // 3. Criar Notificação no Banco e Enviar Push
       const messages = {
         confirmed: "Seu agendamento foi aprovado pelo barbeiro!",
         cancelled: "Infelizmente seu agendamento precisou ser cancelado.",
         completed: "Obrigado pela visita! Seu ponto de fidelidade foi computado."
       };
 
+      const title = newStatus === 'confirmed' ? "Agendamento Confirmado" : "Atualização de Status";
+      const message = messages[newStatus];
+
       await addDoc(collection(db, 'notifications'), {
-        title: newStatus === 'confirmed' ? "Agendamento Confirmado" : "Atualização de Status",
-        message: messages[newStatus],
+        title: title,
+        message: message,
         createdAt: new Date().toISOString(),
         read: false,
         type: newStatus === 'cancelled' ? 'alert' : 'success',
         recipientId: appointment.userId,
         recipientRole: 'client'
       });
+
+      // Tenta enviar o Push Real se o usuário tiver uma subscrição
+      if (appointment.userId) {
+        const userRef = doc(db, 'users', appointment.userId);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists() && userSnap.data().fcmToken) {
+          await sendPushNotification(userSnap.data().fcmToken, title, message);
+        }
+      }
 
       toast({
         title: "Status Atualizado",

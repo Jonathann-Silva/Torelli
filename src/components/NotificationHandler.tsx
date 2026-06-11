@@ -1,10 +1,20 @@
+
 'use client';
 
 import { useEffect } from 'react';
-import { useUser, useFirestore, getFirebaseMessaging } from '@/firebase';
-import { getToken } from 'firebase/messaging';
+import { useUser, useFirestore } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
-import { firebaseConfig } from '@/firebase/config';
+
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
 
 export function NotificationHandler() {
   const { user } = useUser();
@@ -13,52 +23,46 @@ export function NotificationHandler() {
   useEffect(() => {
     if (!user || !db) return;
 
-    const setupNotifications = async () => {
+    const setupPush = async () => {
       try {
-        // 1. Verificações Básicas de Suporte
-        if (!('serviceWorker' in navigator) || !('Notification' in window)) {
-          console.warn('Push não suportado neste navegador.');
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+          console.warn('Push não suportado neste dispositivo.');
           return;
         }
 
-        // 2. Solicitação de Permissão (Explícita)
+        const registration = await navigator.serviceWorker.register('/sw.js');
         const permission = await Notification.requestPermission();
-        if (permission !== 'granted') {
-          console.log('Permissão negada pelo usuário.');
-          return;
-        }
 
-        // 3. Registro do Service Worker
-        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-        
-        // 4. Obtenção do Messaging instance
-        const messaging = await getFirebaseMessaging();
-        if (!messaging) return;
+        if (permission === 'granted') {
+          const subscribeOptions = {
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(
+              process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY || ''
+            )
+          };
 
-        // 5. Obtenção do Token com a chave VAPID da Vercel
-        const currentToken = await getToken(messaging, {
-          vapidKey: firebaseConfig.vapidKey,
-          serviceWorkerRegistration: registration,
-        });
-
-        if (currentToken) {
-          console.log('FCM Token obtido:', currentToken);
+          let subscription = await registration.pushManager.getSubscription();
           
-          // 6. Salvando no Firestore para uso futuro pelo servidor
-          const userRef = doc(db, 'users', user.uid);
-          await updateDoc(userRef, {
-            fcmToken: currentToken,
-            updatedAt: new Date().toISOString()
-          });
+          if (!subscription) {
+            subscription = await registration.pushManager.subscribe(subscribeOptions);
+          }
+
+          if (subscription) {
+            console.log('Push Subscription obtido com sucesso.');
+            const userRef = doc(db, 'users', user.uid);
+            // Salvamos o objeto completo da subscrição como string no campo fcmToken
+            await updateDoc(userRef, {
+              fcmToken: JSON.stringify(subscription),
+              updatedAt: new Date().toISOString()
+            });
+          }
         }
       } catch (error) {
-        console.error('Erro ao registrar notificações:', error);
+        console.error('Erro ao configurar Push nativo:', error);
       }
     };
 
-    // Pequeno atraso para garantir que o hidratamento do React terminou
-    const timer = setTimeout(setupNotifications, 5000);
-    return () => clearTimeout(timer);
+    setupPush();
   }, [user, db]);
 
   return null;
