@@ -6,6 +6,6 @@ export const firebaseConfig = {
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "studio-3657521221-d612e.firebasestorage.app",
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "178968479488",
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:178968479488:web:9ccedca68620490e79d5e5",
-  // Sua chave VAPID Pública (gerada no console do Firebase > Cloud Messaging)
+  // Esta é a chave que você configurou na Vercel
   vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY || "BCP-VGIe2Atp8Ff0doF2P1lcD9KZVsAeCgws_AiDZBnNtVixLszHCCWvIulBFumJ6i5z2bJdjUeZlRJuxo_JZG8"
 };
