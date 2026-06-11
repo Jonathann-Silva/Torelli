@@ -15,55 +15,49 @@ export function NotificationHandler() {
 
     const setupNotifications = async () => {
       try {
-        // Verifica se o navegador suporta as APIs necessárias
+        // 1. Verificações Básicas de Suporte
         if (!('serviceWorker' in navigator) || !('Notification' in window)) {
-          console.warn('Este navegador não suporta notificações push.');
+          console.warn('Push não suportado neste navegador.');
           return;
         }
 
-        // Solicita permissão
+        // 2. Solicitação de Permissão (Explícita)
         const permission = await Notification.requestPermission();
         if (permission !== 'granted') {
-          console.log('Permissão de notificação não concedida.');
+          console.log('Permissão negada pelo usuário.');
           return;
         }
 
-        // Registra o Service Worker explicitamente
-        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-          scope: '/'
-        });
+        // 3. Registro do Service Worker
+        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
         
-        // Aguarda o Service Worker estar ativo
-        await navigator.serviceWorker.ready;
-
+        // 4. Obtenção do Messaging instance
         const messaging = await getFirebaseMessaging();
         if (!messaging) return;
 
-        // Obtém o token usando a chave VAPID
+        // 5. Obtenção do Token com a chave VAPID da Vercel
         const currentToken = await getToken(messaging, {
           vapidKey: firebaseConfig.vapidKey,
           serviceWorkerRegistration: registration,
         });
 
         if (currentToken) {
-          console.log('Token FCM obtido com sucesso!');
+          console.log('FCM Token obtido:', currentToken);
           
-          // Salva o token no Firestore do usuário
+          // 6. Salvando no Firestore para uso futuro pelo servidor
           const userRef = doc(db, 'users', user.uid);
           await updateDoc(userRef, {
             fcmToken: currentToken,
             updatedAt: new Date().toISOString()
           });
-        } else {
-          console.log('Nenhum token disponível. Verifique as configurações de mensagens do navegador.');
         }
       } catch (error) {
-        console.error('Erro ao configurar notificações FCM:', error);
+        console.error('Erro ao registrar notificações:', error);
       }
     };
 
-    // Executa com um pequeno atraso para não pesar no carregamento inicial
-    const timer = setTimeout(setupNotifications, 3000);
+    // Pequeno atraso para garantir que o hidratamento do React terminou
+    const timer = setTimeout(setupNotifications, 5000);
     return () => clearTimeout(timer);
   }, [user, db]);
 
