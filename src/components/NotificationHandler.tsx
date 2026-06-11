@@ -16,51 +16,47 @@ export function NotificationHandler() {
 
     const requestPermission = async () => {
       try {
-        // 1. Verificar suporte a notificações
         if (!('Notification' in window)) {
           console.warn('Este navegador não suporta notificações desktop');
           return;
         }
 
-        // 2. Solicitar permissão explicitamente
         const permission = await Notification.requestPermission();
         
         if (permission === 'granted') {
           console.log('Permissão de notificação concedida.');
           
-          const messaging = await getFirebaseMessaging();
-          if (!messaging) {
-            console.error('Firebase Messaging não inicializado.');
-            return;
-          }
+          // Registrar o Service Worker manualmente para garantir que ele esteja pronto antes do getToken
+          if ('serviceWorker' in navigator) {
+            const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+            console.log('Service Worker registrado com sucesso:', registration.scope);
 
-          // 3. Obter o token FCM
-          // O serviceWorker deve estar no diretório /public/firebase-messaging-sw.js
-          const currentToken = await getToken(messaging, {
-            vapidKey: firebaseConfig.vapidKey,
-          });
+            const messaging = await getFirebaseMessaging();
+            if (!messaging) return;
 
-          if (currentToken) {
-            console.log('Token FCM obtido:', currentToken);
-            // Salva o token no documento do usuário para uso futuro pelo admin
-            const userRef = doc(db, 'users', user.uid);
-            await updateDoc(userRef, {
-              fcmToken: currentToken,
-              updatedAt: new Date().toISOString()
+            // Obter o token usando a chave VAPID explicitamente
+            const currentToken = await getToken(messaging, {
+              vapidKey: firebaseConfig.vapidKey,
+              serviceWorkerRegistration: registration,
             });
-          } else {
-            console.warn('Nenhum token disponível. Verifique se o Service Worker foi registrado corretamente.');
+
+            if (currentToken) {
+              console.log('Token FCM (VAPID) obtido com sucesso!');
+              const userRef = doc(db, 'users', user.uid);
+              await updateDoc(userRef, {
+                fcmToken: currentToken,
+                updatedAt: new Date().toISOString()
+              });
+            }
           }
-        } else {
-          console.warn('Permissão de notificação negada ou ignorada:', permission);
         }
       } catch (error) {
         console.error('Erro ao configurar notificações push:', error);
       }
     };
 
-    // Atraso intencional para garantir que o service worker tenha tempo de carregar
-    const timer = setTimeout(requestPermission, 3000);
+    // Pequeno atraso para não impactar o carregamento inicial da página
+    const timer = setTimeout(requestPermission, 2000);
     return () => clearTimeout(timer);
   }, [user, db]);
 
