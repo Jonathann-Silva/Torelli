@@ -5,6 +5,9 @@ import { useEffect } from 'react';
 import { useUser, useFirestore } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 
+/**
+ * Converte a chave VAPID Base64 para Uint8Array necessário para o navegador
+ */
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -21,28 +24,32 @@ export function NotificationHandler() {
   const db = useFirestore();
 
   useEffect(() => {
+    // Só tentamos configurar se o usuário estiver logado
     if (!user || !db) return;
 
     const setupPush = async () => {
       try {
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-          console.warn('Push nativo não suportado neste navegador.');
+          console.warn('Este navegador não suporta notificações Push.');
           return;
         }
 
-        // Registra o Service Worker explicitamente
-        const registration = await navigator.serviceWorker.register('/sw.js');
+        // 1. Registra o Service Worker dedicado para Web Push
+        const registration = await navigator.serviceWorker.register('/sw.js', {
+          scope: '/'
+        });
         
-        // Aguarda o Service Worker ficar pronto
+        // 2. Aguarda o Service Worker estar pronto e ativo
         await navigator.serviceWorker.ready;
 
+        // 3. Solicita permissão ao usuário
         const permission = await Notification.requestPermission();
 
         if (permission === 'granted') {
-          const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY || '';
+          const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
           
           if (!publicVapidKey) {
-            console.error('Chave Pública VAPID não encontrada no ambiente.');
+            console.error('ERRO: NEXT_PUBLIC_VAPID_PUBLIC_KEY não configurada.');
             return;
           }
 
@@ -51,30 +58,31 @@ export function NotificationHandler() {
             applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
           };
 
+          // 4. Obtém ou cria uma nova subscrição do navegador
           let subscription = await registration.pushManager.getSubscription();
           
-          // Se não houver subscrição ou as chaves mudaram, cria uma nova
           if (!subscription) {
             subscription = await registration.pushManager.subscribe(subscribeOptions);
           }
 
           if (subscription) {
-            console.log('Push Subscription (Web Push) obtido com sucesso.');
             const userRef = doc(db, 'users', user.uid);
             
-            // Salvamos a subscrição completa (JSON) que o web-push precisa para enviar
+            // 5. Salva o objeto de subscrição JSON no Firestore
+            // O web-push precisa desse JSON completo para enviar a mensagem
             await updateDoc(userRef, {
               fcmToken: JSON.stringify(subscription),
               updatedAt: new Date().toISOString()
             });
+            console.log('Subscrição Web Push salva com sucesso.');
           }
         }
       } catch (error) {
-        console.error('Erro ao configurar Web Push nativo:', error);
+        console.error('Falha ao configurar Notificações Push:', error);
       }
     };
 
-    // Pequeno atraso para garantir que o navegador carregou tudo
+    // Delay de 2 segundos para não impactar o carregamento inicial e garantir hidratração
     const timer = setTimeout(setupPush, 2000);
     return () => clearTimeout(timer);
   }, [user, db]);
