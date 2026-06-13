@@ -1,27 +1,57 @@
 
 "use client"
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { 
   Bell, 
-  Mail, 
   CheckCheck, 
   CalendarCheck,
   Info,
   Loader2
 } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { useCollection, useFirestore, useUser } from '@/firebase';
 import { collection, query, orderBy, limit, doc, updateDoc, where } from 'firebase/firestore';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { requestAndSaveNotificationPermission } from '@/lib/pushNotifications';
 
 export default function NotificationsPage() {
   const db = useFirestore();
   const { user } = useUser();
+
+  const [permissionStatus, setPermissionStatus] = useState<NotificationPermission | 'unsupported'>('default');
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!('Notification' in window)) {
+      setPermissionStatus('unsupported');
+    } else {
+      setPermissionStatus(Notification.permission);
+    }
+  }, []);
+
+  const handleEnableNotifications = async () => {
+    if (!db || !user) return;
+    setIsRegistering(true);
+    setErrorMessage(null);
+    try {
+      await requestAndSaveNotificationPermission(db, user.uid);
+      setPermissionStatus(Notification.permission);
+    } catch (error: any) {
+      console.error(error);
+      setErrorMessage(error.message || 'Erro ao ativar notificações.');
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        setPermissionStatus(Notification.permission);
+      }
+    } finally {
+      setIsRegistering(false);
+    }
+  };
 
   const notificationsQuery = useMemo(() => {
     if (!db || !user) return null;
@@ -45,7 +75,7 @@ export default function NotificationsPage() {
     <div className="min-h-screen bg-[#131313] flex flex-col">
       <Header />
       
-      <main className="flex-grow max-w-[480px] mx-auto px-5 pt-24 pb-32 space-y-10">
+      <main className="flex-grow max-w-[480px] mx-auto px-5 pt-24 pb-32 space-y-8">
         <section className="space-y-4">
           <div className="flex items-center gap-2">
             <div className="h-[1px] w-8 bg-primary"></div>
@@ -55,7 +85,85 @@ export default function NotificationsPage() {
           <p className="text-sm font-medium text-muted-foreground">Fique por dentro das atualizações dos seus agendamentos.</p>
         </section>
 
+        {/* Push Notifications Configuration Panel */}
+        <section>
+          {permissionStatus === 'default' && (
+            <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-3xl p-6 relative overflow-hidden shadow-lg">
+              <div className="flex gap-4 items-start">
+                <div className="w-12 h-12 shrink-0 rounded-2xl bg-primary/20 flex items-center justify-center text-primary amber-glow">
+                  <Bell size={24} className="animate-bounce" />
+                </div>
+                <div className="space-y-2 flex-grow">
+                  <h3 className="text-sm font-black text-white uppercase tracking-wider">Ativar Notificações Push</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Receba avisos instantâneos de novos agendamentos e atualizações direto no seu celular.
+                  </p>
+                  {errorMessage && (
+                    <p className="text-[10px] font-semibold text-destructive mt-1 bg-destructive/10 p-2 rounded-lg border border-destructive/20">
+                      ⚠️ {errorMessage}
+                    </p>
+                  )}
+                  <Button 
+                    onClick={handleEnableNotifications}
+                    disabled={isRegistering}
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-black text-xs uppercase tracking-widest mt-2 py-5 rounded-xl transition-all shadow-md shadow-primary/20"
+                  >
+                    {isRegistering ? (
+                      <>
+                        <Loader2 className="animate-spin mr-2" size={14} />
+                        Configurando...
+                      </>
+                    ) : 'Ativar Notificações'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {permissionStatus === 'granted' && (
+            <div className="bg-secondary/20 border border-white/5 rounded-3xl p-5 flex gap-4 items-center">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
+                <CheckCheck size={20} />
+              </div>
+              <div>
+                <h3 className="text-xs font-black text-white uppercase tracking-wider">Notificações Ativas</h3>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Este dispositivo está configurado e receberá alertas em tempo real.</p>
+              </div>
+            </div>
+          )}
+
+          {permissionStatus === 'denied' && (
+            <div className="bg-destructive/5 border border-destructive/10 rounded-3xl p-5 flex gap-4 items-center">
+              <div className="w-10 h-10 rounded-xl bg-destructive/10 border border-destructive/20 flex items-center justify-center text-destructive">
+                <Info size={20} />
+              </div>
+              <div className="flex-grow space-y-1">
+                <h3 className="text-xs font-black text-white uppercase tracking-wider">Notificações Bloqueadas</h3>
+                <p className="text-[10px] text-muted-foreground leading-relaxed">
+                  A permissão foi negada anteriormente. Para ativá-las, acesse as configurações do navegador ou as configurações do app Torelli no seu iPhone (Ajustes &gt; Safari / Tela de Início &gt; Notificações).
+                </p>
+              </div>
+            </div>
+          )}
+
+          {permissionStatus === 'unsupported' && (
+            <div className="bg-secondary/20 border border-white/5 rounded-3xl p-5 flex gap-4 items-center">
+              <div className="w-10 h-10 rounded-xl bg-muted/10 border border-white/5 flex items-center justify-center text-muted-foreground">
+                <Info size={20} />
+              </div>
+              <div>
+                <h3 className="text-xs font-black text-white uppercase tracking-wider">Não suportado</h3>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  Seu navegador ou sistema operacional não suporta notificações push nesta modalidade.
+                </p>
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* Notifications List */}
         <section className="space-y-3">
+          <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2">Mensagens Recebidas</h3>
           {loading ? (
             <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
           ) : notifications.length > 0 ? (
