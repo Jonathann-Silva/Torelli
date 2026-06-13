@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useMemo } from 'react';
@@ -34,7 +33,6 @@ export default function AdminDashboard() {
       const aptRef = doc(db, 'appointments', appointment.id);
       await updateDoc(aptRef, { status: newStatus });
 
-      // Se estiver completando, adicionar pontos
       if (newStatus === 'completed' && appointment.userId) {
         const userRef = doc(db, 'users', appointment.userId);
         const userSnap = await getDoc(userRef);
@@ -48,7 +46,6 @@ export default function AdminDashboard() {
         }
       }
 
-      // 3. Criar Notificação no Banco e Enviar Push
       const messages = {
         confirmed: "Seu agendamento foi aprovado pelo barbeiro!",
         cancelled: "Infelizmente seu agendamento precisou ser cancelado.",
@@ -68,7 +65,6 @@ export default function AdminDashboard() {
         recipientRole: 'client'
       });
 
-      // Tenta enviar o Push Real se o usuário tiver uma subscrição
       if (appointment.userId) {
         const userRef = doc(db, 'users', appointment.userId);
         const userSnap = await getDoc(userRef);
@@ -115,7 +111,7 @@ export default function AdminDashboard() {
         <section className="space-y-6">
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-2xl font-black text-white tracking-tight shrink min-w-0">Agendamentos</h2>
-            <div className="bg-primary/10 px-3 py-1 rounded-full border border-primary/20 shrink-0">
+            <div className="bg-primary/10 px-3 py-1 rounded-full border border-primary/20 shrink-0 flex items-center justify-center">
               <span className="text-[10px] font-black text-primary uppercase tracking-widest whitespace-nowrap">Tempo Real</span>
             </div>
           </div>
@@ -155,7 +151,7 @@ export default function AdminDashboard() {
                             onClick={() => handleUpdateStatus(apt, 'confirmed')} 
                             className="flex-1 h-12 bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-widest rounded-xl amber-glow"
                           >
-                            Aceitar Agendamento
+                            Aceitar
                           </Button>
                           <Button 
                             onClick={() => handleUpdateStatus(apt, 'cancelled')} 

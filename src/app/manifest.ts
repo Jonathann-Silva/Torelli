@@ -16,12 +16,20 @@ export default function manifest(): MetadataRoute.Manifest {
         src: logoUrl,
         sizes: '192x192',
         type: 'image/jpeg',
+        purpose: 'any'
       },
       {
         src: logoUrl,
         sizes: '512x512',
         type: 'image/jpeg',
+        purpose: 'any'
       },
+      {
+        src: logoUrl,
+        sizes: '512x512',
+        type: 'image/jpeg',
+        purpose: 'maskable'
+      }
     ],
   }
 }
