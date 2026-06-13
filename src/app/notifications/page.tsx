@@ -178,7 +178,7 @@ export default function NotificationsPage() {
               <div className="flex-grow space-y-1">
                 <h3 className="text-xs font-black text-white uppercase tracking-wider">Notificações Bloqueadas</h3>
                 <p className="text-[10px] text-muted-foreground leading-relaxed">
-                  A permissão foi negada. Para ativá-las, limpe as configurações do site no seu navegador ou acesse: Ajustes > Safari > Notificações (se instalado).
+                  A permissão foi negada. Para ativá-las, limpe as configurações do site no seu navegador ou acesse: Ajustes {' > '} Safari {' > '} Notificações (se instalado).
                 </p>
               </div>
             </div>
