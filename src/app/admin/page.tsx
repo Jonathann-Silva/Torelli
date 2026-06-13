@@ -114,7 +114,7 @@ export default function AdminDashboard() {
 
         <section className="space-y-6">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-2xl font-black text-white tracking-tight shrink min-w-0">Gestão de Agendamentos</h2>
+            <h2 className="text-2xl font-black text-white tracking-tight shrink min-w-0">Agendamentos</h2>
             <div className="bg-primary/10 px-3 py-1 rounded-full border border-primary/20 shrink-0">
               <span className="text-[10px] font-black text-primary uppercase tracking-widest whitespace-nowrap">Tempo Real</span>
             </div>
