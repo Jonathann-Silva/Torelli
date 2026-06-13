@@ -10,7 +10,7 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'Barbearia Premium Torelli - Agendamentos online',
     start_url: '/',
     display: 'standalone',
-    background_color: '#0A0A0A',
+    background_color: '#000000',
     theme_color: '#ffbf00',
     icons: [
       {

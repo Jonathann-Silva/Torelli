@@ -1,4 +1,6 @@
 
+'use client';
+
 import { doc, updateDoc } from 'firebase/firestore';
 import { Firestore } from 'firebase/firestore';
 
@@ -18,18 +20,12 @@ function urlBase64ToUint8Array(base64String: string) {
 
 /**
  * Registra o Service Worker, solicita permissão e salva o token no Firestore.
- * Deve ser chamado a partir de um gesto de usuário (como clique em um botão)
- * para funcionar de forma confiável no iOS (Safari).
  */
 export async function requestAndSaveNotificationPermission(db: Firestore, userId: string) {
   if (typeof window === 'undefined') return null;
 
   if (!('serviceWorker' in navigator)) {
     throw new Error('Este navegador não suporta Service Workers.');
-  }
-
-  if (!('PushManager' in window)) {
-    throw new Error('Este navegador não suporta a Push API.');
   }
 
   try {
@@ -41,14 +37,14 @@ export async function requestAndSaveNotificationPermission(db: Firestore, userId
     // 2. Aguarda o Service Worker estar pronto e ativo
     await navigator.serviceWorker.ready;
 
-    // 3. Solicita permissão ao usuário (gesto do usuário no iOS necessário)
+    // 3. Solicita permissão ao usuário
     const permission = await Notification.requestPermission();
 
     if (permission === 'granted') {
       const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY || '';
       
       if (!publicVapidKey) {
-        throw new Error('Chave VAPID pública não configurada no ambiente.');
+        throw new Error('Chave VAPID pública não configurada.');
       }
 
       const subscribeOptions = {
@@ -56,40 +52,16 @@ export async function requestAndSaveNotificationPermission(db: Firestore, userId
         applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
       };
 
-      // 4. Obtém ou cria uma nova subscrição do navegador
       let subscription = await registration.pushManager.getSubscription();
       
-      if (subscription) {
-        // Verifica se a chave mudou para re-inscrever se necessário
-        const currentKey = urlBase64ToUint8Array(publicVapidKey);
-        const subscriptionKey = subscription.options.applicationServerKey
-          ? new Uint8Array(subscription.options.applicationServerKey)
-          : null;
-
-        let keysMatch = false;
-        if (subscriptionKey && currentKey.length === subscriptionKey.length) {
-          keysMatch = true;
-          for (let i = 0; i < currentKey.length; i++) {
-            if (currentKey[i] !== subscriptionKey[i]) {
-              keysMatch = false;
-              break;
-            }
-          }
-        }
-
-        if (!keysMatch) {
-          await subscription.unsubscribe();
-          subscription = await registration.pushManager.subscribe(subscribeOptions);
-        }
-      } else {
+      if (!subscription) {
         subscription = await registration.pushManager.subscribe(subscribeOptions);
       }
 
       if (subscription) {
         const userRef = doc(db, 'users', userId);
         
-        // 5. Salva o objeto de subscrição JSON no Firestore
-        // Isso é o que o web-push usa no backend para enviar a mensagem
+        // Salva a subscrição completa para o web-push disparar depois
         await updateDoc(userRef, {
           fcmToken: JSON.stringify(subscription),
           updatedAt: new Date().toISOString()
@@ -98,7 +70,7 @@ export async function requestAndSaveNotificationPermission(db: Firestore, userId
         return subscription;
       }
     } else {
-      throw new Error(`Permissão de notificação negada: ${permission}`);
+      throw new Error(`Permissão de notificação: ${permission}`);
     }
   } catch (err: any) {
     console.error('Erro no fluxo de Push:', err);
