@@ -1,3 +1,4 @@
+
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { FirebaseClientProvider } from '@/firebase';
@@ -8,12 +9,12 @@ import { AuthGuard } from '@/components/AuthGuard';
 const logoUrl = "https://www.dropbox.com/scl/fi/70fwazrji2098g5fwn6de/Logo.jpg?rlkey=jxz0q85l1qo54pnk0wa2huiqm&st=ead76oo8&raw=1";
 
 export const metadata: Metadata = {
-  title: 'Torelli Agendamentos | Premium Barbershop',
+  title: 'Barber Torelli | Premium Barbershop',
   description: 'Experiência de cuidado premium para o homem moderno.',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Torelli',
+    title: 'Barber Torelli',
   },
   icons: {
     icon: logoUrl,
