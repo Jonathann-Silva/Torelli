@@ -7,9 +7,18 @@ self.addEventListener('push', function (event) {
   if (!event.data) return;
 
   try {
-    const data = event.data.json();
+    let data;
+    try {
+      data = event.data.json();
+    } catch (e) {
+      data = {
+        title: 'Barber Torelli',
+        body: event.data.text()
+      };
+    }
+
     const options = {
-      body: data.body,
+      body: data.body || '',
       // Usamos o logotipo oficial da Torelli como ícone padrão
       icon: 'https://www.dropbox.com/scl/fi/70fwazrji2098g5fwn6de/Logo.jpg?rlkey=jxz0q85l1qo54pnk0wa2huiqm&st=ead76oo8&raw=1',
       badge: 'https://www.dropbox.com/scl/fi/70fwazrji2098g5fwn6de/Logo.jpg?rlkey=jxz0q85l1qo54pnk0wa2huiqm&st=ead76oo8&raw=1',

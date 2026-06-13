@@ -61,7 +61,31 @@ export function NotificationHandler() {
           // 4. Obtém ou cria uma nova subscrição do navegador
           let subscription = await registration.pushManager.getSubscription();
           
-          if (!subscription) {
+          // Se já existir uma subscrição, verificamos se ela foi criada com a mesma chave VAPID atual.
+          // Se a chave VAPID mudou (o que invalida a subscrição antiga), cancelamos a subscrição antiga e criamos uma nova.
+          if (subscription) {
+            const currentKey = urlBase64ToUint8Array(publicVapidKey);
+            const subscriptionKey = subscription.options.applicationServerKey
+              ? new Uint8Array(subscription.options.applicationServerKey)
+              : null;
+
+            let keysMatch = false;
+            if (subscriptionKey && currentKey.length === subscriptionKey.length) {
+              keysMatch = true;
+              for (let i = 0; i < currentKey.length; i++) {
+                if (currentKey[i] !== subscriptionKey[i]) {
+                  keysMatch = false;
+                  break;
+                }
+              }
+            }
+
+            if (!keysMatch) {
+              console.log('Chave VAPID alterada ou inválida. Recriando a subscrição...');
+              await subscription.unsubscribe();
+              subscription = await registration.pushManager.subscribe(subscribeOptions);
+            }
+          } else {
             subscription = await registration.pushManager.subscribe(subscribeOptions);
           }
 
