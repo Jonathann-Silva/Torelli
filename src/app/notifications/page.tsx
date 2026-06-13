@@ -9,7 +9,9 @@ import {
   CheckCheck, 
   CalendarCheck,
   Info,
-  Loader2
+  Loader2,
+  Share,
+  PlusSquare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCollection, useFirestore, useUser } from '@/firebase';
@@ -25,9 +27,15 @@ export default function NotificationsPage() {
   const [permissionStatus, setPermissionStatus] = useState<NotificationPermission | 'unsupported'>('default');
   const [isRegistering, setIsRegistering] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    
+    // Verifica se está instalado (Standalone)
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+    setIsStandalone(!!isPWA);
+
     if (!('Notification' in window)) {
       setPermissionStatus('unsupported');
     } else {
@@ -37,6 +45,7 @@ export default function NotificationsPage() {
 
   const handleEnableNotifications = async () => {
     if (!db || !user) return;
+    
     setIsRegistering(true);
     setErrorMessage(null);
     try {
@@ -71,6 +80,33 @@ export default function NotificationsPage() {
     updateDoc(notificationRef, { read: true });
   };
 
+  // Renderiza dica para iOS se não estiver em modo standalone
+  const renderIosTip = () => {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    if (isIOS && !isStandalone) {
+      return (
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-3xl p-6 space-y-4">
+          <div className="flex gap-4">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-500 shrink-0">
+              <PlusSquare size={20} />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-sm font-black text-white uppercase tracking-wider">Atenção no iPhone</h3>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Para receber notificações push no iOS, você deve primeiro instalar este app:
+              </p>
+            </div>
+          </div>
+          <div className="bg-background/40 p-3 rounded-xl flex items-center gap-3 text-[10px] font-bold text-foreground">
+            <div className="bg-white/10 p-1.5 rounded-md"><Share size={14} /></div>
+            <span>Clique no ícone de compartilhar e depois em <strong>"Adicionar à Tela de Início"</strong>.</span>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="min-h-screen bg-[#131313] flex flex-col">
       <Header />
@@ -86,7 +122,9 @@ export default function NotificationsPage() {
         </section>
 
         {/* Push Notifications Configuration Panel */}
-        <section>
+        <section className="space-y-4">
+          {renderIosTip()}
+
           {permissionStatus === 'default' && (
             <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-3xl p-6 relative overflow-hidden shadow-lg">
               <div className="flex gap-4 items-start">
@@ -105,7 +143,7 @@ export default function NotificationsPage() {
                   )}
                   <Button 
                     onClick={handleEnableNotifications}
-                    disabled={isRegistering}
+                    disabled={isRegistering || (!isStandalone && /iPad|iPhone|iPod/.test(navigator.userAgent))}
                     className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-black text-xs uppercase tracking-widest mt-2 py-5 rounded-xl transition-all shadow-md shadow-primary/20"
                   >
                     {isRegistering ? (
@@ -140,7 +178,7 @@ export default function NotificationsPage() {
               <div className="flex-grow space-y-1">
                 <h3 className="text-xs font-black text-white uppercase tracking-wider">Notificações Bloqueadas</h3>
                 <p className="text-[10px] text-muted-foreground leading-relaxed">
-                  A permissão foi negada anteriormente. Para ativá-las, acesse as configurações do navegador ou as configurações do app Torelli no seu iPhone (Ajustes &gt; Safari / Tela de Início &gt; Notificações).
+                  A permissão foi negada. Para ativá-las, limpe as configurações do site no seu navegador ou acesse: Ajustes > Safari > Notificações (se instalado).
                 </p>
               </div>
             </div>
@@ -154,7 +192,7 @@ export default function NotificationsPage() {
               <div>
                 <h3 className="text-xs font-black text-white uppercase tracking-wider">Não suportado</h3>
                 <p className="text-[10px] text-muted-foreground mt-0.5">
-                  Seu navegador ou sistema operacional não suporta notificações push nesta modalidade.
+                  Seu navegador não suporta a Push API nativa.
                 </p>
               </div>
             </div>

@@ -1,3 +1,4 @@
+
 import { doc, updateDoc } from 'firebase/firestore';
 import { Firestore } from 'firebase/firestore';
 
@@ -23,74 +24,85 @@ function urlBase64ToUint8Array(base64String: string) {
 export async function requestAndSaveNotificationPermission(db: Firestore, userId: string) {
   if (typeof window === 'undefined') return null;
 
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-    throw new Error('Este navegador não suporta notificações Push.');
+  if (!('serviceWorker' in navigator)) {
+    throw new Error('Este navegador não suporta Service Workers.');
   }
 
-  // 1. Registra o Service Worker dedicado para Web Push
-  const registration = await navigator.serviceWorker.register('/sw.js', {
-    scope: '/'
-  });
-  
-  // 2. Aguarda o Service Worker estar pronto e ativo
-  await navigator.serviceWorker.ready;
+  if (!('PushManager' in window)) {
+    throw new Error('Este navegador não suporta a Push API.');
+  }
 
-  // 3. Solicita permissão ao usuário (gesto do usuário no iOS necessário)
-  const permission = await Notification.requestPermission();
-
-  if (permission === 'granted') {
-    const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
+  try {
+    // 1. Registra o Service Worker dedicado para Web Push
+    const registration = await navigator.serviceWorker.register('/sw.js', {
+      scope: '/'
+    });
     
-    if (!publicVapidKey) {
-      throw new Error('NEXT_PUBLIC_VAPID_PUBLIC_KEY não configurada.');
-    }
+    // 2. Aguarda o Service Worker estar pronto e ativo
+    await navigator.serviceWorker.ready;
 
-    const subscribeOptions = {
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
-    };
+    // 3. Solicita permissão ao usuário (gesto do usuário no iOS necessário)
+    const permission = await Notification.requestPermission();
 
-    // 4. Obtém ou cria uma nova subscrição do navegador
-    let subscription = await registration.pushManager.getSubscription();
-    
-    if (subscription) {
-      const currentKey = urlBase64ToUint8Array(publicVapidKey);
-      const subscriptionKey = subscription.options.applicationServerKey
-        ? new Uint8Array(subscription.options.applicationServerKey)
-        : null;
+    if (permission === 'granted') {
+      const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY || '';
+      
+      if (!publicVapidKey) {
+        throw new Error('Chave VAPID pública não configurada no ambiente.');
+      }
 
-      let keysMatch = false;
-      if (subscriptionKey && currentKey.length === subscriptionKey.length) {
-        keysMatch = true;
-        for (let i = 0; i < currentKey.length; i++) {
-          if (currentKey[i] !== subscriptionKey[i]) {
-            keysMatch = false;
-            break;
+      const subscribeOptions = {
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
+      };
+
+      // 4. Obtém ou cria uma nova subscrição do navegador
+      let subscription = await registration.pushManager.getSubscription();
+      
+      if (subscription) {
+        // Verifica se a chave mudou para re-inscrever se necessário
+        const currentKey = urlBase64ToUint8Array(publicVapidKey);
+        const subscriptionKey = subscription.options.applicationServerKey
+          ? new Uint8Array(subscription.options.applicationServerKey)
+          : null;
+
+        let keysMatch = false;
+        if (subscriptionKey && currentKey.length === subscriptionKey.length) {
+          keysMatch = true;
+          for (let i = 0; i < currentKey.length; i++) {
+            if (currentKey[i] !== subscriptionKey[i]) {
+              keysMatch = false;
+              break;
+            }
           }
         }
-      }
 
-      if (!keysMatch) {
-        await subscription.unsubscribe();
+        if (!keysMatch) {
+          await subscription.unsubscribe();
+          subscription = await registration.pushManager.subscribe(subscribeOptions);
+        }
+      } else {
         subscription = await registration.pushManager.subscribe(subscribeOptions);
       }
-    } else {
-      subscription = await registration.pushManager.subscribe(subscribeOptions);
-    }
 
-    if (subscription) {
-      const userRef = doc(db, 'users', userId);
-      
-      // 5. Salva o objeto de subscrição JSON no Firestore
-      await updateDoc(userRef, {
-        fcmToken: JSON.stringify(subscription),
-        updatedAt: new Date().toISOString()
-      });
-      
-      return subscription;
+      if (subscription) {
+        const userRef = doc(db, 'users', userId);
+        
+        // 5. Salva o objeto de subscrição JSON no Firestore
+        // Isso é o que o web-push usa no backend para enviar a mensagem
+        await updateDoc(userRef, {
+          fcmToken: JSON.stringify(subscription),
+          updatedAt: new Date().toISOString()
+        });
+        
+        return subscription;
+      }
+    } else {
+      throw new Error(`Permissão de notificação negada: ${permission}`);
     }
-  } else {
-    throw new Error(`Permissão de notificação: ${permission}`);
+  } catch (err: any) {
+    console.error('Erro no fluxo de Push:', err);
+    throw err;
   }
 
   return null;
