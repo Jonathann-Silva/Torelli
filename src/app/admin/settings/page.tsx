@@ -5,16 +5,18 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
-import { Settings, Clock, Calendar, Loader2, Sparkles, Save, LogOut, Bell, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { Settings, Clock, Calendar, Loader2, Sparkles, Save, LogOut, Bell, ChevronRight, CheckCircle2, Send, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useFirestore, useDoc, useAuth, useUser } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, collection, getDocs, addDoc } from 'firebase/firestore';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { requestAndSaveNotificationPermission } from '@/lib/pushNotifications';
+import { sendPushNotification } from '@/app/actions/send-push';
 import { 
   Dialog, 
   DialogContent, 
@@ -28,12 +30,21 @@ export default function AdminSettingsPage() {
   const auth = useAuth();
   const { user } = useUser();
   const router = useRouter();
+  
+  // States for global settings
   const [isSaving, setIsSaving] = useState(false);
-  const [isRegisteringPush, setIsRegisteringPush] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeField, setActiveField] = useState<'interval' | 'cleaning' | 'combo' | null>(null);
   const [tempValue, setTempValue] = useState<number>(0);
+  
+  // States for notifications
+  const [isRegisteringPush, setIsRegisteringPush] = useState(false);
   const [pushStatus, setPushStatus] = useState<'default' | 'granted' | 'denied' | 'loading'>('loading');
+  
+  // States for broadcast message
+  const [broadcastTitle, setBroadcastTitle] = useState('');
+  const [broadcastMessage, setBroadcastMessage] = useState('');
+  const [isSendingBroadcast, setIsSendingBroadcast] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
@@ -60,7 +71,6 @@ export default function AdminSettingsPage() {
 
   const handleSaveSetting = async () => {
     if (!db) return;
-    
     setIsSaving(true);
     try {
       const updatedSettings = { ...globalSettings };
@@ -69,12 +79,8 @@ export default function AdminSettingsPage() {
       else if (activeField === 'combo') updatedSettings.comboDuration = tempValue;
 
       await setDoc(doc(db, 'settings', 'global'), updatedSettings, { merge: true });
-      
       setIsDialogOpen(false);
-      toast({ 
-        title: "Configuração Atualizada", 
-        description: "As alterações foram salvas com sucesso." 
-      });
+      toast({ title: "Configuração Atualizada", description: "As alterações foram salvas com sucesso." });
     } catch (error) {
       console.error(error);
       toast({ title: "Erro", description: "Não foi possível salvar a configuração.", variant: "destructive" });
@@ -89,11 +95,64 @@ export default function AdminSettingsPage() {
     try {
       await requestAndSaveNotificationPermission(db, user.uid);
       setPushStatus(Notification.permission);
-      toast({ title: "Push Ativado", description: "O administrador agora receberá alertas de agendamentos." });
+      toast({ title: "Push Ativado", description: "Você agora receberá alertas de novos agendamentos." });
     } catch (error: any) {
       toast({ title: "Erro", description: error.message || "Falha ao ativar notificações.", variant: "destructive" });
     } finally {
       setIsRegisteringPush(false);
+    }
+  };
+
+  const handleSendBroadcast = async () => {
+    if (!db || !broadcastTitle || !broadcastMessage) {
+      toast({ title: "Campos obrigatórios", description: "Preencha o título e a mensagem para enviar.", variant: "destructive" });
+      return;
+    }
+
+    setIsSendingBroadcast(true);
+    try {
+      const usersSnap = await getDocs(collection(db, 'users'));
+      let count = 0;
+
+      const promises = usersSnap.docs.map(async (userDoc) => {
+        const userData = userDoc.data();
+        const userId = userDoc.id;
+
+        // 1. Save in Firestore notifications collection for the user
+        await addDoc(collection(db, 'notifications'), {
+          title: broadcastTitle,
+          message: broadcastMessage,
+          createdAt: new Date().toISOString(),
+          read: false,
+          type: 'info',
+          recipientId: userId,
+          recipientRole: 'client'
+        });
+
+        // 2. Send Push Notification if token exists
+        if (userData.fcmToken) {
+          try {
+            await sendPushNotification(userData.fcmToken, broadcastTitle, broadcastMessage);
+          } catch (e) {
+            console.error(`Falha ao enviar push para ${userId}`, e);
+          }
+        }
+        count++;
+      });
+
+      await Promise.all(promises);
+
+      toast({ 
+        title: "Comunicado Enviado!", 
+        description: `Sua mensagem foi enviada para ${count} usuários cadastrados.` 
+      });
+      setBroadcastTitle('');
+      setBroadcastMessage('');
+    } catch (error) {
+      console.error(error);
+      toast({ title: "Erro", description: "Falha ao processar envio em massa.", variant: "destructive" });
+    } finally {
+      setIsSendingBroadcast(false);
     }
   };
 
@@ -111,20 +170,93 @@ export default function AdminSettingsPage() {
     <div className="min-h-screen">
       <Header />
       
-      <main className="pt-24 pb-32 px-5 space-y-10 max-w-[480px] mx-auto text-center md:text-left">
-        <header className="space-y-2">
+      <main className="pt-24 pb-32 px-5 space-y-10 max-w-[480px] mx-auto">
+        <header className="space-y-2 text-center md:text-left">
           <div className="flex items-center gap-2 justify-center md:justify-start">
             <div className="h-[1px] w-8 bg-primary"></div>
-            <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Configurações</span>
+            <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Gestão Torelli</span>
           </div>
-          <h2 className="text-4xl font-black text-white tracking-tighter">Ajustes Globais</h2>
-          <p className="text-sm font-medium text-muted-foreground">Configure os intervalos e tempos padrão da barbearia.</p>
+          <h2 className="text-4xl font-black text-white tracking-tighter">Ajustes & Mensagens</h2>
+          <p className="text-sm font-medium text-muted-foreground">Controle operacional e comunicação direta.</p>
         </header>
 
+        {/* Notificações Push apenas para Admin */}
+        <section className="space-y-4">
+          <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">Alertas do Sistema</h3>
+          <button 
+            disabled={pushStatus === 'granted' || isRegisteringPush}
+            onClick={handleEnableNotifications}
+            className="w-full flex items-center justify-between p-4 bg-primary/10 border border-primary/20 rounded-2xl hover:bg-primary/20 transition-all group amber-glow disabled:opacity-80"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                {isRegisteringPush ? <Loader2 className="animate-spin" size={20} /> : <Bell size={20} />}
+              </div>
+              <div className="text-left">
+                <span className="text-sm font-black text-white uppercase tracking-tight">
+                  {pushStatus === 'granted' ? 'Notificações Ativas' : 'Receber Alertas de Agendamentos'}
+                </span>
+                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">
+                  {pushStatus === 'granted' ? 'Você já recebe avisos no celular.' : 'Ative para saber quando alguém agendar'}
+                </p>
+              </div>
+            </div>
+            {pushStatus === 'granted' ? <CheckCircle2 size={18} className="text-primary" /> : <ChevronRight size={18} className="text-primary" />}
+          </button>
+        </section>
+
+        {/* Broadcast Messaging Section */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-2">
+            <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">Comunicado Geral</h3>
+            <div className="h-px flex-grow bg-white/5"></div>
+          </div>
+          
+          <div className="premium-card p-6 rounded-3xl space-y-4 bg-secondary/20 border-white/5">
+            <div className="space-y-2 text-left">
+              <Label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Título do Comunicado</Label>
+              <Input 
+                value={broadcastTitle}
+                onChange={(e) => setBroadcastTitle(e.target.value)}
+                placeholder="Ex: Promoção de Natal 🎄"
+                className="bg-background/50 border-white/5 rounded-xl h-12 text-sm"
+              />
+            </div>
+            
+            <div className="space-y-2 text-left">
+              <Label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Mensagem para os Clientes</Label>
+              <Textarea 
+                value={broadcastMessage}
+                onChange={(e) => setBroadcastMessage(e.target.value)}
+                placeholder="Digite aqui o aviso que todos os clientes cadastrados receberão..."
+                className="bg-background/50 border-white/5 rounded-xl min-h-[120px] text-sm resize-none"
+              />
+            </div>
+
+            <Button 
+              disabled={isSendingBroadcast || !broadcastTitle || !broadcastMessage}
+              onClick={handleSendBroadcast}
+              className="w-full bg-primary text-primary-foreground font-black uppercase tracking-widest h-14 rounded-2xl amber-glow shadow-xl active:scale-95 transition-all"
+            >
+              {isSendingBroadcast ? <Loader2 className="animate-spin" /> : (
+                <div className="flex items-center gap-2">
+                  <Send size={18} />
+                  Enviar para todos os usuários
+                </div>
+              )}
+            </Button>
+            <p className="text-[9px] text-center text-muted-foreground font-medium italic">
+              * Isso enviará uma notificação no app e um Push para todos os clientes.
+            </p>
+          </div>
+        </section>
+
+        {/* Global Operational Settings */}
         <section className="space-y-6">
+          <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">Tempos de Operação</h3>
           {loading ? (
-            <div className="flex justify-center py-20">
-              <Loader2 className="animate-spin text-primary" size={40} />
+            <div className="flex justify-center py-10">
+              <Loader2 className="animate-spin text-primary" size={32} />
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4">
@@ -186,41 +318,6 @@ export default function AdminSettingsPage() {
               </div>
             </div>
           )}
-        </section>
-
-        {/* Notificações Push apenas para Admin */}
-        <section className="space-y-4">
-          <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">Comunicação</h3>
-          <button 
-            disabled={pushStatus === 'granted' || isRegisteringPush}
-            onClick={handleEnableNotifications}
-            className="w-full flex items-center justify-between p-4 bg-primary/10 border border-primary/20 rounded-2xl hover:bg-primary/20 transition-all group amber-glow disabled:opacity-80"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                {isRegisteringPush ? <Loader2 className="animate-spin" size={20} /> : <Bell size={20} />}
-              </div>
-              <div className="text-left">
-                <span className="text-sm font-black text-white uppercase tracking-tight">
-                  {pushStatus === 'granted' ? 'Notificações Ativas' : 'Ativar Notificações Push'}
-                </span>
-                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">
-                  {pushStatus === 'granted' ? 'O administrador já recebe alertas.' : 'Receba novos agendamentos no celular'}
-                </p>
-              </div>
-            </div>
-            {pushStatus === 'granted' ? <CheckCircle2 size={18} className="text-primary" /> : <ChevronRight size={18} className="text-primary" />}
-          </button>
-        </section>
-
-        <section className="bg-primary/5 border border-primary/20 p-8 rounded-3xl relative overflow-hidden text-left">
-          <div className="relative z-10 space-y-4">
-            <h4 className="text-xl font-black text-white tracking-tight">Dica de Gestão</h4>
-            <p className="text-xs font-medium text-muted-foreground leading-relaxed">
-              Alterar o intervalo de tempo afetará apenas novos agendamentos. Os horários já marcados permanecerão inalterados.
-            </p>
-          </div>
-          <Settings size={100} className="absolute -right-8 -bottom-8 text-primary/5 rotate-12 pointer-events-none" />
         </section>
 
         <section className="pt-6">
