@@ -12,9 +12,27 @@ import { useFirestore, useUser, useCollection, useDoc } from '@/firebase';
 import { collection, addDoc, serverTimestamp, query, orderBy, where, doc, getDocs, limit } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
-import { format, addDays, isSameDay, parse, addMinutes, isAfter, isBefore } from 'date-fns';
+import { format, addDays, isSameDay, parse, addMinutes, isAfter, isBefore, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { sendPushNotification } from '@/app/actions/send-push';
+
+// Lista de feriados nacionais fixos (MM-DD)
+const FERIADOS = [
+  '01-01', // Ano Novo
+  '04-21', // Tiradentes
+  '05-01', // Dia do Trabalho
+  '09-07', // Independência
+  '10-12', // Nossa Senhora Aparecida
+  '11-02', // Finados
+  '11-15', // Proclamação da República
+  '11-20', // Consciência Negra
+  '12-25', // Natal
+];
+
+const isHoliday = (date: Date) => {
+  const dateStr = format(date, 'MM-dd');
+  return FERIADOS.includes(dateStr);
+};
 
 export default function BookPage() {
   const router = useRouter();
@@ -70,10 +88,37 @@ export default function BookPage() {
   const { data: bookedAppointments = [] } = useCollection(appointmentsQuery);
 
   const availableDates = useMemo(() => {
-    // Retornamos uma data fixa ou nula se não estiver montado para evitar mismatch
     if (typeof window === 'undefined') return [];
-    return Array.from({ length: 14 }).map((_, i) => addDays(new Date(), i));
+    
+    const dates: Date[] = [];
+    let current = new Date();
+    let attempts = 0;
+
+    // Gerar os próximos 14 dias úteis (pula Domingos e Feriados)
+    while (dates.length < 14 && attempts < 45) {
+      const dayOfWeek = getDay(current);
+      const isSun = dayOfWeek === 0;
+      const isHol = isHoliday(current);
+
+      if (!isSun && !isHol) {
+        dates.push(new Date(current));
+      }
+      current = addDays(current, 1);
+      attempts++;
+    }
+
+    return dates;
   }, []);
+
+  // Se o dia atual for domingo/feriado, seleciona o primeiro dia disponível da lista
+  useEffect(() => {
+    if (availableDates.length > 0) {
+      const isCurrentClosed = getDay(selectedDate) === 0 || isHoliday(selectedDate);
+      if (isCurrentClosed) {
+        setSelectedDate(availableDates[0]);
+      }
+    }
+  }, [availableDates, selectedDate]);
 
   const timeSlots = useMemo(() => {
     if (!selectedBarber || !settings || !currentTime) return [];
@@ -261,10 +306,15 @@ export default function BookPage() {
         </section>
 
         <section className="space-y-6">
-          <h3 className="text-xl font-black text-white flex items-center gap-2">
-            <CalendarIcon className="text-primary" size={20} />
-            Escolha a Data
-          </h3>
+          <div className="flex flex-col gap-1">
+            <h3 className="text-xl font-black text-white flex items-center gap-2">
+              <CalendarIcon className="text-primary" size={20} />
+              Escolha a Data
+            </h3>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-7">
+              Aberto Seg a Sáb • Domingo e Feriados Fechado
+            </p>
+          </div>
           <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-2">
             {availableDates.map((date) => {
               const isActive = isSameDay(selectedDate, date);
@@ -281,6 +331,9 @@ export default function BookPage() {
                     {format(date, 'MMM', { locale: ptBR })}
                   </span>
                   <span className="text-2xl font-black mt-1">{format(date, 'dd')}</span>
+                  <span className="text-[8px] font-bold uppercase opacity-60">
+                    {format(date, 'EEE', { locale: ptBR })}
+                  </span>
                 </div>
               );
             })}
