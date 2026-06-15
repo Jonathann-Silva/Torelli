@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -31,7 +32,6 @@ export default function NotificationsPage() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
-    // Verifica se está instalado (Standalone)
     const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
     setIsStandalone(!!isPWA);
 
@@ -53,9 +53,6 @@ export default function NotificationsPage() {
     } catch (error: any) {
       console.error('Falha ao ativar notificações:', error);
       setErrorMessage(error.message || 'Erro ao ativar notificações. Tente novamente.');
-      if (typeof window !== 'undefined' && 'Notification' in window) {
-        setPermissionStatus(Notification.permission);
-      }
     } finally {
       setIsRegistering(false);
     }
@@ -122,7 +119,7 @@ export default function NotificationsPage() {
         <section className="space-y-4">
           {renderIosTip()}
 
-          {permissionStatus === 'default' && (
+          {(permissionStatus === 'default' || (isStandalone && permissionStatus === 'default')) && (
             <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-3xl p-6 relative overflow-hidden shadow-lg">
               <div className="flex gap-4 items-start">
                 <div className="w-12 h-12 shrink-0 rounded-2xl bg-primary/20 flex items-center justify-center text-primary amber-glow">
@@ -140,7 +137,7 @@ export default function NotificationsPage() {
                   )}
                   <Button 
                     onClick={handleEnableNotifications}
-                    disabled={isRegistering || (!isStandalone && /iPad|iPhone|iPod/.test(navigator.userAgent))}
+                    disabled={isRegistering}
                     className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-black text-xs uppercase tracking-widest mt-2 py-5 rounded-xl transition-all shadow-md shadow-primary/20"
                   >
                     {isRegistering ? (

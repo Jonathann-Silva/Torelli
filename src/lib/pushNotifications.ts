@@ -1,11 +1,9 @@
+
 'use client';
 
 import { doc, updateDoc } from 'firebase/firestore';
 import { Firestore } from 'firebase/firestore';
 
-/**
- * Converte a chave VAPID Base64 para Uint8Array necessário para o navegador
- */
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -17,10 +15,6 @@ function urlBase64ToUint8Array(base64String: string) {
   return outputArray;
 }
 
-/**
- * Registra o Service Worker, solicita permissão e salva o token no Firestore.
- * Otimizado para iOS: a permissão é solicitada imediatamente após o clique.
- */
 export async function requestAndSaveNotificationPermission(db: Firestore, userId: string) {
   if (typeof window === 'undefined') return null;
 
@@ -28,8 +22,7 @@ export async function requestAndSaveNotificationPermission(db: Firestore, userId
     throw new Error('Este navegador não suporta Service Workers.');
   }
 
-  // 1. SOLICITAR PERMISSÃO IMEDIATAMENTE (Requisito Crítico do iOS)
-  // Isso deve ocorrer o mais próximo possível do clique do usuário.
+  // No iOS, o pedido de permissão deve ser a PRIMEIRA coisa após o clique
   const permission = await Notification.requestPermission();
   
   if (permission !== 'granted') {
@@ -37,19 +30,16 @@ export async function requestAndSaveNotificationPermission(db: Firestore, userId
   }
 
   try {
-    // 2. Registra o Service Worker
-    const registration = await navigator.serviceWorker.register('/sw.js', {
-      scope: '/'
-    });
+    // Registra o sw.js (deve estar na raiz da pasta public)
+    const registration = await navigator.serviceWorker.register('/sw.js');
     
-    // 3. Aguarda o Service Worker estar pronto
+    // Aguarda o SW estar ativo
     await navigator.serviceWorker.ready;
 
-    // 4. Obtém a chave pública VAPID
     const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY || '';
     
     if (!publicVapidKey) {
-      throw new Error('Chave VAPID pública não configurada.');
+      throw new Error('Chave VAPID pública não configurada no ambiente.');
     }
 
     const subscribeOptions = {
@@ -57,7 +47,6 @@ export async function requestAndSaveNotificationPermission(db: Firestore, userId
       applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
     };
 
-    // 5. Gera ou recupera a subscrição do Push Manager
     let subscription = await registration.pushManager.getSubscription();
     
     if (!subscription) {
@@ -66,13 +55,10 @@ export async function requestAndSaveNotificationPermission(db: Firestore, userId
 
     if (subscription) {
       const userRef = doc(db, 'users', userId);
-      
-      // Salva a subscrição completa para o web-push disparar depois
       await updateDoc(userRef, {
         fcmToken: JSON.stringify(subscription),
         updatedAt: new Date().toISOString()
       });
-      
       return subscription;
     }
   } catch (err: any) {
