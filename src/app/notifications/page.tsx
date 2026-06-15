@@ -7,12 +7,11 @@ import { BottomNav } from '@/components/layout/BottomNav';
 import { 
   Bell, 
   CheckCheck, 
-  CalendarCheck,
-  Info,
-  Loader2,
-  Share,
   PlusSquare,
-  Settings
+  Share,
+  Settings,
+  Loader2,
+  AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCollection, useFirestore, useUser } from '@/firebase';
@@ -27,7 +26,6 @@ export default function NotificationsPage() {
 
   const [permissionStatus, setPermissionStatus] = useState<NotificationPermission | 'unsupported' | 'loading'>('loading');
   const [isRegistering, setIsRegistering] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
@@ -46,19 +44,13 @@ export default function NotificationsPage() {
   const handleEnableNotifications = async () => {
     if (!db || !user) return;
     
-    if (Notification.permission === 'denied') {
-      setErrorMessage('Permissão bloqueada. Limpe os dados do site no Safari.');
-      return;
-    }
-
     setIsRegistering(true);
-    setErrorMessage(null);
     try {
       await requestAndSaveNotificationPermission(db, user.uid);
       setPermissionStatus(Notification.permission);
     } catch (error: any) {
       console.error('Falha ao ativar notificações:', error);
-      setErrorMessage(error.message || 'Erro ao ativar notificações.');
+      setPermissionStatus(Notification.permission);
     } finally {
       setIsRegistering(false);
     }
@@ -112,7 +104,7 @@ export default function NotificationsPage() {
     <div className="min-h-screen bg-[#131313] flex flex-col">
       <Header />
       
-      <main className="flex-grow max-w-[480px] mx-auto px-5 pt-24 pb-32 space-y-8">
+      <main className="flex-grow max-w-[480px] mx-auto px-5 pt-24 pb-32 space-y-8 w-full">
         <section className="space-y-4">
           <div className="flex items-center gap-2">
             <div className="h-[1px] w-8 bg-primary"></div>
@@ -124,7 +116,32 @@ export default function NotificationsPage() {
         <section className="space-y-4">
           {renderIosTip()}
 
-          {(permissionStatus === 'default' || permissionStatus === 'loading') && (
+          {permissionStatus === 'denied' && (
+            <div className="bg-destructive/10 border border-destructive/20 rounded-3xl p-6 space-y-4">
+              <div className="flex gap-4 items-center">
+                <div className="w-12 h-12 rounded-xl bg-destructive/20 border border-destructive/30 flex items-center justify-center text-destructive shrink-0">
+                  <AlertTriangle size={24} />
+                </div>
+                <div className="flex-grow space-y-1">
+                  <h3 className="text-sm font-black text-white uppercase tracking-wider">Acesso Bloqueado</h3>
+                  <p className="text-[10px] text-muted-foreground font-bold leading-tight">Você recusou as notificações anteriormente.</p>
+                </div>
+              </div>
+              <div className="space-y-3 bg-black/20 p-4 rounded-2xl border border-white/5">
+                <p className="text-[11px] text-white/80 font-medium leading-relaxed">
+                  Para liberar no iPhone:
+                </p>
+                <ol className="text-[10px] text-muted-foreground space-y-2 list-decimal ml-4">
+                  <li>Remova este app da sua tela de início.</li>
+                  <li>No Safari, vá em <strong>Ajustes {' > '} Safari {' > '} Avançado {' > '} Dados dos Sites</strong>.</li>
+                  <li>Procure pelo seu domínio e clique em <strong>Apagar</strong>.</li>
+                  <li>Adicione o app à tela de início novamente.</li>
+                </ol>
+              </div>
+            </div>
+          )}
+
+          {permissionStatus === 'default' && (
             <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-3xl p-6 relative overflow-hidden shadow-lg">
               <div className="flex gap-4 items-start">
                 <div className="w-12 h-12 shrink-0 rounded-2xl bg-primary/20 flex items-center justify-center text-primary amber-glow">
@@ -132,11 +149,7 @@ export default function NotificationsPage() {
                 </div>
                 <div className="space-y-2 flex-grow">
                   <h3 className="text-sm font-black text-white uppercase tracking-wider">Ativar Notificações Push</h3>
-                  {errorMessage && (
-                    <p className="text-[10px] font-semibold text-destructive mt-1 bg-destructive/10 p-2 rounded-lg border border-destructive/20">
-                      ⚠️ {errorMessage}
-                    </p>
-                  )}
+                  <p className="text-[10px] text-muted-foreground font-bold">Fique por dentro de cada atualização.</p>
                   <Button 
                     onClick={handleEnableNotifications}
                     disabled={isRegistering}
@@ -157,22 +170,6 @@ export default function NotificationsPage() {
               <div>
                 <h3 className="text-xs font-black text-white uppercase tracking-wider">Notificações Ativas</h3>
               </div>
-            </div>
-          )}
-
-          {permissionStatus === 'denied' && (
-            <div className="bg-destructive/5 border border-destructive/10 rounded-3xl p-6 space-y-4">
-              <div className="flex gap-4 items-center">
-                <div className="w-12 h-12 rounded-xl bg-destructive/10 border border-destructive/20 flex items-center justify-center text-destructive shrink-0">
-                  <Settings size={24} />
-                </div>
-                <div className="flex-grow space-y-1">
-                  <h3 className="text-sm font-black text-white uppercase tracking-wider">Acesso Negado</h3>
-                </div>
-              </div>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Como liberar: Ajustes {' > '} Safari {' > '} Avançado {' > '} Dados dos Sites. Limpe os dados do seu domínio para que o prompt volte a aparecer.
-              </p>
             </div>
           )}
         </section>

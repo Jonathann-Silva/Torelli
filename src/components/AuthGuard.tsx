@@ -9,6 +9,7 @@ import Image from 'next/image';
 
 /**
  * Componente que protege todas as rotas da aplicação.
+ * Sincronizado para evitar erro de hidratação.
  */
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useUser();

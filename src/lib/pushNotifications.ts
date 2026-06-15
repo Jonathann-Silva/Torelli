@@ -22,21 +22,20 @@ export async function requestAndSaveNotificationPermission(db: Firestore, userId
     throw new Error('Este navegador não suporta Service Workers.');
   }
 
-  // IMPORTANTE PARA iOS: O pedido de permissão DEVE ser disparado diretamente pelo clique.
-  // Não deve haver nenhum await ANTES deste comando.
+  // O pedido de permissão deve ser a PRIMEIRA ação após o clique no iOS.
   const permission = await Notification.requestPermission();
   
   if (permission !== 'granted') {
-    throw new Error(`Permissão negada: ${permission}`);
+    // Se for 'denied', o navegador não mostrará o prompt novamente.
+    // O componente pai deve tratar isso mostrando instruções.
+    return null;
   }
 
   try {
-    // Registra o sw.js (deve estar na raiz da pasta public)
     const registration = await navigator.serviceWorker.register('/sw.js', {
       scope: '/'
     });
     
-    // Aguarda o SW estar ativo
     await navigator.serviceWorker.ready;
 
     const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY || '';
