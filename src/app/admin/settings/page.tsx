@@ -1,19 +1,20 @@
 
 "use client"
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
-import { Settings, Clock, Calendar, Loader2, Sparkles, Save, LogOut, Bell, ChevronRight } from 'lucide-react';
+import { Settings, Clock, Calendar, Loader2, Sparkles, Save, LogOut, Bell, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useFirestore, useDoc, useAuth } from '@/firebase';
+import { useFirestore, useDoc, useAuth, useUser } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/hooks/use-toast';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
+import { requestAndSaveNotificationPermission } from '@/lib/pushNotifications';
 import { 
   Dialog, 
   DialogContent, 
@@ -25,11 +26,20 @@ import {
 export default function AdminSettingsPage() {
   const db = useFirestore();
   const auth = useAuth();
+  const { user } = useUser();
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
+  const [isRegisteringPush, setIsRegisteringPush] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeField, setActiveField] = useState<'interval' | 'cleaning' | 'combo' | null>(null);
   const [tempValue, setTempValue] = useState<number>(0);
+  const [pushStatus, setPushStatus] = useState<'default' | 'granted' | 'denied' | 'loading'>('loading');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setPushStatus(Notification.permission);
+    }
+  }, []);
 
   const settingsRef = useMemo(() => doc(db, 'settings', 'global'), [db]);
   const { data: settingsData, loading } = useDoc(settingsRef);
@@ -70,6 +80,20 @@ export default function AdminSettingsPage() {
       toast({ title: "Erro", description: "Não foi possível salvar a configuração.", variant: "destructive" });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleEnableNotifications = async () => {
+    if (!db || !user) return;
+    setIsRegisteringPush(true);
+    try {
+      await requestAndSaveNotificationPermission(db, user.uid);
+      setPushStatus(Notification.permission);
+      toast({ title: "Push Ativado", description: "O administrador agora receberá alertas de agendamentos." });
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message || "Falha ao ativar notificações.", variant: "destructive" });
+    } finally {
+      setIsRegisteringPush(false);
     }
   };
 
@@ -164,23 +188,29 @@ export default function AdminSettingsPage() {
           )}
         </section>
 
-        {/* Notificações Push para Admin */}
+        {/* Notificações Push apenas para Admin */}
         <section className="space-y-4">
           <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">Comunicação</h3>
-          <Link href="/notifications">
-            <button className="w-full flex items-center justify-between p-4 bg-primary/10 border border-primary/20 rounded-2xl hover:bg-primary/20 transition-all group amber-glow">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                  <Bell size={20} />
-                </div>
-                <div className="text-left">
-                  <span className="text-sm font-black text-white uppercase tracking-tight">Notificações Push</span>
-                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">Alertas de novos agendamentos</p>
-                </div>
+          <button 
+            disabled={pushStatus === 'granted' || isRegisteringPush}
+            onClick={handleEnableNotifications}
+            className="w-full flex items-center justify-between p-4 bg-primary/10 border border-primary/20 rounded-2xl hover:bg-primary/20 transition-all group amber-glow disabled:opacity-80"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                {isRegisteringPush ? <Loader2 className="animate-spin" size={20} /> : <Bell size={20} />}
               </div>
-              <ChevronRight size={18} className="text-primary" />
-            </button>
-          </Link>
+              <div className="text-left">
+                <span className="text-sm font-black text-white uppercase tracking-tight">
+                  {pushStatus === 'granted' ? 'Notificações Ativas' : 'Ativar Notificações Push'}
+                </span>
+                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">
+                  {pushStatus === 'granted' ? 'O administrador já recebe alertas.' : 'Receba novos agendamentos no celular'}
+                </p>
+              </div>
+            </div>
+            {pushStatus === 'granted' ? <CheckCircle2 size={18} className="text-primary" /> : <ChevronRight size={18} className="text-primary" />}
+          </button>
         </section>
 
         <section className="bg-primary/5 border border-primary/20 p-8 rounded-3xl relative overflow-hidden text-left">

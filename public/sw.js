@@ -1,59 +1,52 @@
 
-/**
- * Service Worker para notificações Web Push Nativo.
- * Este arquivo deve estar na raiz da pasta public.
- */
-
-self.addEventListener('push', function (event) {
-  if (!(self.Notification && self.Notification.permission === 'granted')) {
-    return;
+/*
+* Service Worker para Notificações Web Push
+*/
+self.addEventListener('push', function(event) {
+  if (event.data) {
+    try {
+      const data = event.data.json();
+      const options = {
+        body: data.body,
+        icon: 'https://www.dropbox.com/scl/fi/70fwazrji2098g5fwn6de/Logo.jpg?rlkey=jxz0q85l1qo54pnk0wa2huiqm&st=ead76oo8&raw=1',
+        badge: 'https://www.dropbox.com/scl/fi/70fwazrji2098g5fwn6de/Logo.jpg?rlkey=jxz0q85l1qo54pnk0wa2huiqm&st=ead76oo8&raw=1',
+        data: {
+          url: data.url || '/'
+        },
+        vibrate: [200, 100, 200]
+      };
+      event.waitUntil(
+        self.registration.showNotification(data.title || 'Barber Torelli', options)
+      );
+    } catch (e) {
+      console.error('Erro ao processar payload da notificação:', e);
+    }
   }
+});
 
-  let data = {};
-  try {
-    data = event.data.json();
-  } catch (e) {
-    data = {
-      title: 'Barber Torelli',
-      body: event.data.text() || 'Você tem uma nova atualização.'
-    };
-  }
-
-  const options = {
-    body: data.body,
-    icon: 'https://www.dropbox.com/scl/fi/70fwazrji2098g5fwn6de/Logo.jpg?rlkey=jxz0q85l1qo54pnk0wa2huiqm&st=ead76oo8&raw=1',
-    badge: 'https://www.dropbox.com/scl/fi/70fwazrji2098g5fwn6de/Logo.jpg?rlkey=jxz0q85l1qo54pnk0wa2huiqm&st=ead76oo8&raw=1',
-    data: {
-      url: data.url || '/'
-    },
-    vibrate: [100, 50, 100],
-    actions: [
-      { action: 'open', title: 'Ver Agora' }
-    ]
-  };
-
+self.addEventListener('notificationclick', function(event) {
+  event.notification.close();
+  const urlToOpen = event.notification.data.url || '/';
+  
   event.waitUntil(
-    self.registration.showNotification(data.title, options)
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
+      for (let i = 0; i < clientList.length; i++) {
+        let client = clientList[i];
+        if (client.url === urlToOpen && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    })
   );
 });
 
-self.addEventListener('notificationclick', function (event) {
-  event.notification.close();
+self.addEventListener('install', function(event) {
+  self.skipWaiting();
+});
 
-  const urlToOpen = event.notification.data.url;
-
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
-      if (clientList.length > 0) {
-        let client = clientList[0];
-        for (let i = 0; i < clientList.length; i++) {
-          if (clientList[i].focused) {
-            client = clientList[i];
-          }
-        }
-        return client.focus().then(() => client.navigate(urlToOpen));
-      }
-      return clients.openWindow(urlToOpen);
-    })
-  );
+self.addEventListener('activate', function(event) {
+  event.waitUntil(clients.claim());
 });
