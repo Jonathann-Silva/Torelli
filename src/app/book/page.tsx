@@ -9,11 +9,12 @@ import { X, CheckCircle, Scissors, Loader2, Calendar as CalendarIcon, Clock } fr
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useFirestore, useUser, useCollection, useDoc } from '@/firebase';
-import { collection, addDoc, serverTimestamp, query, orderBy, where, doc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, orderBy, where, doc, getDocs, limit } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
-import { format, addDays, isSameDay, parse, addMinutes, isAfter, isBefore, set } from 'date-fns';
+import { format, addDays, isSameDay, parse, addMinutes, isAfter, isBefore } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { sendPushNotification } from '@/app/actions/send-push';
 
 export default function BookPage() {
   const router = useRouter();
@@ -27,7 +28,6 @@ export default function BookPage() {
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
 
-  // Update current time every minute to keep the slots "real-time"
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -35,15 +35,12 @@ export default function BookPage() {
     return () => clearInterval(timer);
   }, []);
 
-  // Fetch Services
   const servicesQuery = useMemo(() => db ? query(collection(db, 'services'), orderBy('name')) : null, [db]);
   const { data: services = [], loading: servicesLoading } = useCollection(servicesQuery);
 
-  // Fetch Barbers
   const barbersQuery = useMemo(() => db ? query(collection(db, 'barbers'), orderBy('name')) : null, [db]);
   const { data: barbers = [], loading: barbersLoading } = useCollection(barbersQuery);
 
-  // Auto-select barber if only one is active
   useEffect(() => {
     if (!barbersLoading && barbers.length > 0) {
       const activeBarbers = barbers.filter((b: any) => b.status === 'active');
@@ -53,11 +50,9 @@ export default function BookPage() {
     }
   }, [barbers, barbersLoading]);
 
-  // Fetch Global Settings
   const settingsRef = useMemo(() => db ? doc(db, 'settings', 'global') : null, [db]);
   const { data: settings } = useDoc(settingsRef);
 
-  // Fetch Existing Appointments for the selected date and barber to filter availability
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
   const appointmentsQuery = useMemo(() => {
     if (!db || !selectedBarber) return null;
@@ -71,17 +66,15 @@ export default function BookPage() {
 
   const { data: bookedAppointments = [] } = useCollection(appointmentsQuery);
 
-  // Generate dynamic dates (next 14 days)
   const availableDates = useMemo(() => {
     return Array.from({ length: 14 }).map((_, i) => addDays(new Date(), i));
   }, []);
 
-  // Generate time slots based on barber schedule and global settings
   const timeSlots = useMemo(() => {
     if (!selectedBarber || !settings) return [];
 
     const slots: string[] = [];
-    const interval = settings.appointmentInterval || 30; // Minutes from admin settings
+    const interval = settings.appointmentInterval || 30;
     
     const scheduleMatch = selectedBarber.schedule?.match(/(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})/);
     const breakMatch = selectedBarber.break?.match(/(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})/);
@@ -99,22 +92,17 @@ export default function BookPage() {
     while (isBefore(current, end)) {
       const timeStr = format(current, 'HH:mm');
       
-      // Check if it's during break
       const isBreak = breakStart && breakEnd && 
                       (isAfter(current, breakStart) || timeStr === format(breakStart, 'HH:mm')) && 
                       isBefore(current, breakEnd);
 
-      // Check if it's already booked
       const isBooked = bookedAppointments.some((apt: any) => apt.time === timeStr);
 
-      // Check if time has already passed (if today)
       let isPast = false;
       if (isToday) {
-        // We set the hours and minutes on the current slot relative to today to compare accurately
         const slotDate = new Date(selectedDate);
         const [hours, mins] = timeStr.split(':').map(Number);
         slotDate.setHours(hours, mins, 0, 0);
-        
         isPast = isBefore(slotDate, currentTime);
       }
 
@@ -154,14 +142,27 @@ export default function BookPage() {
 
       await addDoc(collection(db, 'appointments'), appointmentData);
 
+      const notificationTitle = "Novo Agendamento";
+      const notificationMessage = `${user.displayName} solicitou ${selectedService.name} com ${selectedBarber.name} para o dia ${format(selectedDate, 'dd/MM')} às ${selectedTime}.`;
+
       await addDoc(collection(db, 'notifications'), {
-        title: "Novo Agendamento",
-        message: `${user.displayName} solicitou ${selectedService.name} com ${selectedBarber.name} para o dia ${format(selectedDate, 'dd/MM')} às ${selectedTime}.`,
+        title: notificationTitle,
+        message: notificationMessage,
         createdAt: new Date().toISOString(),
         read: false,
         type: 'info',
         recipientRole: 'admin'
       });
+
+      // Busca o administrador para enviar push notification
+      const adminQuery = query(collection(db, 'users'), where('email', '==', 'admin@gmail.com'), limit(1));
+      const adminSnap = await getDocs(adminQuery);
+      if (!adminSnap.empty) {
+        const adminData = adminSnap.docs[0].data();
+        if (adminData.fcmToken) {
+          sendPushNotification(adminData.fcmToken, notificationTitle, notificationMessage, '/admin');
+        }
+      }
 
       toast({
         title: "Solicitação Enviada!",
@@ -199,7 +200,6 @@ export default function BookPage() {
       </header>
 
       <main className="max-w-[600px] mx-auto px-4 py-8 space-y-12 pb-40">
-        {/* Service Selection */}
         <section className="space-y-6">
           <h3 className="text-xl font-black text-white flex items-center gap-2">
             <Scissors className="text-primary" size={20} />
@@ -227,7 +227,6 @@ export default function BookPage() {
           </div>
         </section>
 
-        {/* Barber Selection */}
         <section className="space-y-6">
           <h3 className="text-xl font-black text-white">Selecione o Barbeiro</h3>
           <div className="grid grid-cols-1 gap-4">
@@ -255,7 +254,6 @@ export default function BookPage() {
           </div>
         </section>
 
-        {/* Date Selection */}
         <section className="space-y-6">
           <h3 className="text-xl font-black text-white flex items-center gap-2">
             <CalendarIcon className="text-primary" size={20} />
@@ -283,7 +281,6 @@ export default function BookPage() {
           </div>
         </section>
 
-        {/* Time Selection */}
         <section className="space-y-6">
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-black text-white flex items-center gap-2">

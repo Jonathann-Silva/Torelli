@@ -1,10 +1,12 @@
+
 "use client"
 
 import React, { useMemo } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Header } from '@/components/layout/Header';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { TrendingUp, DollarSign, MoreVertical, CheckCircle2, Loader2, Check, X } from 'lucide-react';
+import { TrendingUp, DollarSign, Bell, CheckCircle2, Loader2, Check, X, ChevronRight } from 'lucide-react';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy, limit, doc, updateDoc, getDoc, increment, addDoc } from 'firebase/firestore';
@@ -96,13 +98,31 @@ export default function AdminDashboard() {
       <Header />
       
       <main className="pt-24 px-5 space-y-10 max-w-container-max mx-auto">
-        <section className="space-y-1">
-          <h2 className="text-4xl font-black text-white tracking-tighter">Visão Geral</h2>
-          <p className="text-muted-foreground text-sm font-medium">Painel Administrativo da Barbearia</p>
+        <section className="space-y-4">
+          <div className="space-y-1">
+            <h2 className="text-4xl font-black text-white tracking-tighter">Visão Geral</h2>
+            <p className="text-muted-foreground text-sm font-medium">Painel Administrativo da Barbearia</p>
+          </div>
+
+          {/* Botão de Notificações para Admin */}
+          <Link href="/notifications">
+            <button className="w-full flex items-center justify-between p-4 bg-primary/10 border border-primary/20 rounded-2xl hover:bg-primary/20 transition-all group mb-2 amber-glow">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                  <Bell size={20} />
+                </div>
+                <div className="text-left">
+                  <span className="text-sm font-black text-white uppercase tracking-tight">Ativar Notificações Push</span>
+                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">Receba novos agendamentos no celular</p>
+                </div>
+              </div>
+              <ChevronRight size={18} className="text-primary" />
+            </button>
+          </Link>
         </section>
 
         <section className="grid grid-cols-1 gap-4">
-          <div className="premium-card p-8 rounded-3xl bg-primary/5 border-primary/20 amber-glow">
+          <div className="premium-card p-8 rounded-3xl bg-secondary/30 border-white/5">
             <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Receita Total (Concluídos)</span>
             <h3 className="text-4xl font-black text-primary mt-2">R$ {totalRevenue.toFixed(2)}</h3>
           </div>
