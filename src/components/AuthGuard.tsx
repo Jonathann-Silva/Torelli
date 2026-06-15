@@ -28,7 +28,6 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       const isAdminRoute = pathname.startsWith('/admin');
       const isAdminUser = user?.email === 'admin@gmail.com';
       
-      // Rotas que ambos (admin e cliente) podem acessar
       const sharedRoutes = ['/profile', '/notifications', '/help', '/profile/meus-dados'];
       const isSharedRoute = sharedRoutes.some(route => pathname === route);
       
@@ -41,10 +40,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
           router.replace('/');
         }
       } else if (user && isAdminRoute && !isAdminUser) {
-        // Cliente tentando entrar no painel admin
         router.replace('/');
       } else if (user && !isAdminRoute && isAdminUser && !isAuthPage && !isSharedRoute) {
-        // Admin tentando entrar na área de cliente (exceto páginas de perfil/notificações)
         router.replace('/admin');
       }
     }

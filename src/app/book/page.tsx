@@ -26,9 +26,10 @@ export default function BookPage() {
   const [selectedBarber, setSelectedBarber] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTime, setSelectedTime] = useState<string>('');
-  const [currentTime, setCurrentTime] = useState<Date>(new Date());
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
 
   useEffect(() => {
+    setCurrentTime(new Date());
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 60000);
@@ -71,7 +72,7 @@ export default function BookPage() {
   }, []);
 
   const timeSlots = useMemo(() => {
-    if (!selectedBarber || !settings) return [];
+    if (!selectedBarber || !settings || !currentTime) return [];
 
     const slots: string[] = [];
     const interval = settings.appointmentInterval || 30;
@@ -143,7 +144,7 @@ export default function BookPage() {
       await addDoc(collection(db, 'appointments'), appointmentData);
 
       const notificationTitle = "Novo Agendamento";
-      const notificationMessage = `${user.displayName} solicitou ${selectedService.name} com ${selectedBarber.name} para o dia ${format(selectedDate, 'dd/MM')} às ${selectedTime}.`;
+      const notificationMessage = `${user.displayName} solicitou ${selectedService.name} para o dia ${format(selectedDate, 'dd/MM')} às ${selectedTime}.`;
 
       await addDoc(collection(db, 'notifications'), {
         title: notificationTitle,
@@ -154,7 +155,6 @@ export default function BookPage() {
         recipientRole: 'admin'
       });
 
-      // Busca o administrador para enviar push notification
       const adminQuery = query(collection(db, 'users'), where('email', '==', 'admin@gmail.com'), limit(1));
       const adminSnap = await getDocs(adminQuery);
       if (!adminSnap.empty) {
@@ -219,7 +219,7 @@ export default function BookPage() {
                 </div>
                 <div className="flex-1">
                   <h4 className="text-sm font-bold text-foreground leading-none">{service.name}</h4>
-                  <p className="text-[10px] text-muted-foreground mt-1">R$ {Number(service.price).toFixed(2)} • {service.duration} min</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">R$ {Number(service.price).toFixed(2)}</p>
                 </div>
                 {selectedService?.id === service.id && <CheckCircle className="text-primary" size={20} />}
               </div>
@@ -282,21 +282,13 @@ export default function BookPage() {
         </section>
 
         <section className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xl font-black text-white flex items-center gap-2">
-              <Clock className="text-primary" size={20} />
-              Horários Disponíveis
-            </h3>
-            {selectedBarber && (
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                Com {selectedBarber.name}
-              </span>
-            )}
-          </div>
-          
+          <h3 className="text-xl font-black text-white flex items-center gap-2">
+            <Clock className="text-primary" size={20} />
+            Horários Disponíveis
+          </h3>
           {!selectedBarber ? (
             <div className="bg-secondary/20 p-8 rounded-2xl border border-dashed border-white/5 text-center">
-              <p className="text-xs text-muted-foreground uppercase font-black tracking-widest">Selecione um barbeiro primeiro</p>
+              <p className="text-xs text-muted-foreground uppercase font-black tracking-widest">Selecione um barbeiro</p>
             </div>
           ) : timeSlots.length > 0 ? (
             <div className="grid grid-cols-3 gap-3">
@@ -304,7 +296,7 @@ export default function BookPage() {
                 <button
                   key={time}
                   onClick={() => setSelectedTime(time)}
-                  className={`py-4 rounded-xl border font-bold text-sm transition-all ${selectedTime === time ? 'bg-primary text-primary-foreground border-primary shadow-lg' : 'bg-secondary/30 border-white/5 text-muted-foreground'}`}
+                  className={`py-4 rounded-xl border font-bold text-sm transition-all ${selectedTime === time ? 'bg-primary text-primary-foreground border-primary' : 'bg-secondary/30 border-white/5 text-muted-foreground'}`}
                 >
                   {time}
                 </button>
@@ -312,7 +304,7 @@ export default function BookPage() {
             </div>
           ) : (
             <div className="bg-secondary/20 p-8 rounded-2xl border border-dashed border-white/5 text-center">
-              <p className="text-xs text-muted-foreground uppercase font-black tracking-widest">Nenhum horário disponível para esta data</p>
+              <p className="text-xs text-muted-foreground uppercase font-black tracking-widest">Nenhum horário disponível</p>
             </div>
           )}
         </section>

@@ -25,7 +25,7 @@ export default function NotificationsPage() {
   const db = useFirestore();
   const { user } = useUser();
 
-  const [permissionStatus, setPermissionStatus] = useState<NotificationPermission | 'unsupported'>('default');
+  const [permissionStatus, setPermissionStatus] = useState<NotificationPermission | 'unsupported' | 'loading'>('loading');
   const [isRegistering, setIsRegistering] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isStandalone, setIsStandalone] = useState(false);
@@ -46,9 +46,8 @@ export default function NotificationsPage() {
   const handleEnableNotifications = async () => {
     if (!db || !user) return;
     
-    // Se já estiver negado, não adianta tentar pedir novamente, o navegador bloqueia o prompt.
     if (Notification.permission === 'denied') {
-      setErrorMessage('Permissão bloqueada no sistema. Siga as instruções abaixo para liberar.');
+      setErrorMessage('Permissão bloqueada. Limpe os dados do site no Safari.');
       return;
     }
 
@@ -59,7 +58,7 @@ export default function NotificationsPage() {
       setPermissionStatus(Notification.permission);
     } catch (error: any) {
       console.error('Falha ao ativar notificações:', error);
-      setErrorMessage(error.message || 'Erro ao ativar notificações. Tente novamente.');
+      setErrorMessage(error.message || 'Erro ao ativar notificações.');
     } finally {
       setIsRegistering(false);
     }
@@ -84,7 +83,7 @@ export default function NotificationsPage() {
   };
 
   const renderIosTip = () => {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
     if (isIOS && !isStandalone) {
       return (
         <div className="bg-amber-500/10 border border-amber-500/20 rounded-3xl p-6 space-y-4">
@@ -101,7 +100,7 @@ export default function NotificationsPage() {
           </div>
           <div className="bg-background/40 p-3 rounded-xl flex items-center gap-3 text-[10px] font-bold text-foreground">
             <div className="bg-white/10 p-1.5 rounded-md"><Share size={14} /></div>
-            <span>Clique no ícone de compartilhar e depois em <strong>"Adicionar à Tela de Início"</strong>.</span>
+            <span>Clique em compartilhar e depois em <strong>"Adicionar à Tela de Início"</strong>.</span>
           </div>
         </div>
       );
@@ -120,13 +119,12 @@ export default function NotificationsPage() {
             <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Central de Avisos</span>
           </div>
           <h2 className="text-4xl font-black text-white tracking-tighter">Notificações</h2>
-          <p className="text-sm font-medium text-muted-foreground">Fique por dentro das atualizações dos seus agendamentos.</p>
         </section>
 
         <section className="space-y-4">
           {renderIosTip()}
 
-          {permissionStatus === 'default' && (
+          {(permissionStatus === 'default' || permissionStatus === 'loading') && (
             <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-3xl p-6 relative overflow-hidden shadow-lg">
               <div className="flex gap-4 items-start">
                 <div className="w-12 h-12 shrink-0 rounded-2xl bg-primary/20 flex items-center justify-center text-primary amber-glow">
@@ -134,9 +132,6 @@ export default function NotificationsPage() {
                 </div>
                 <div className="space-y-2 flex-grow">
                   <h3 className="text-sm font-black text-white uppercase tracking-wider">Ativar Notificações Push</h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Receba avisos instantâneos de novos agendamentos e atualizações direto no seu celular.
-                  </p>
                   {errorMessage && (
                     <p className="text-[10px] font-semibold text-destructive mt-1 bg-destructive/10 p-2 rounded-lg border border-destructive/20">
                       ⚠️ {errorMessage}
@@ -147,12 +142,7 @@ export default function NotificationsPage() {
                     disabled={isRegistering}
                     className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-black text-xs uppercase tracking-widest mt-2 py-5 rounded-xl transition-all shadow-md shadow-primary/20"
                   >
-                    {isRegistering ? (
-                      <>
-                        <Loader2 className="animate-spin mr-2" size={14} />
-                        Configurando...
-                      </>
-                    ) : 'Ativar Notificações'}
+                    {isRegistering ? <Loader2 className="animate-spin" /> : 'Ativar Agora'}
                   </Button>
                 </div>
               </div>
@@ -160,13 +150,12 @@ export default function NotificationsPage() {
           )}
 
           {permissionStatus === 'granted' && (
-            <div className="bg-secondary/20 border border-white/5 rounded-3xl p-5 flex gap-4 items-center">
+            <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-3xl p-5 flex gap-4 items-center">
               <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
                 <CheckCheck size={20} />
               </div>
               <div>
                 <h3 className="text-xs font-black text-white uppercase tracking-wider">Notificações Ativas</h3>
-                <p className="text-[10px] text-muted-foreground mt-0.5">Este dispositivo está configurado e receberá alertas em tempo real.</p>
               </div>
             </div>
           )}
@@ -179,35 +168,11 @@ export default function NotificationsPage() {
                 </div>
                 <div className="flex-grow space-y-1">
                   <h3 className="text-sm font-black text-white uppercase tracking-wider">Acesso Negado</h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Você bloqueou as notificações anteriormente.
-                  </p>
                 </div>
               </div>
-              
-              <div className="bg-background/40 p-4 rounded-2xl space-y-3">
-                <p className="text-[10px] font-bold text-foreground uppercase tracking-wider">Como liberar:</p>
-                <ol className="text-[11px] text-muted-foreground space-y-2 list-decimal list-inside">
-                  <li>Remova o app da tela de início.</li>
-                  <li>No Safari, vá em <strong>Ajustes {' > '} Safari {' > '} Avançado {' > '} Dados dos Sites</strong>.</li>
-                  <li>Pesquise pelo seu domínio e clique em <strong>Editar {' > '} Apagar</strong>.</li>
-                  <li>Instale o app novamente na tela de início.</li>
-                </ol>
-              </div>
-            </div>
-          )}
-
-          {permissionStatus === 'unsupported' && (
-            <div className="bg-secondary/20 border border-white/5 rounded-3xl p-5 flex gap-4 items-center">
-              <div className="w-10 h-10 rounded-xl bg-muted/10 border border-white/5 flex items-center justify-center text-muted-foreground">
-                <Info size={20} />
-              </div>
-              <div>
-                <h3 className="text-xs font-black text-white uppercase tracking-wider">Não suportado</h3>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
-                  Seu navegador não suporta a Push API nativa.
-                </p>
-              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Como liberar: Ajustes {' > '} Safari {' > '} Avançado {' > '} Dados dos Sites.
+              </p>
             </div>
           )}
         </section>
@@ -224,14 +189,6 @@ export default function NotificationsPage() {
                 className={`group bg-[#1C1B1B] border border-white/5 p-5 rounded-2xl flex gap-4 items-start transition-all hover:bg-[#201F1F] relative cursor-pointer ${n.read ? 'opacity-50' : ''}`}
               >
                 {!n.read && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-10 bg-primary rounded-r-full"></div>}
-                
-                <div className={`w-12 h-12 shrink-0 rounded-full flex items-center justify-center border border-white/5 ${
-                  n.type === 'alert' ? 'bg-destructive/10 text-destructive' : 
-                  n.type === 'success' ? 'bg-primary/10 text-primary' : 'bg-secondary text-muted-foreground'
-                }`}>
-                  {n.type === 'alert' ? <Info size={20} /> : <CalendarCheck size={20} />}
-                </div>
-
                 <div className="flex-grow space-y-1">
                   <div className="flex justify-between items-start">
                     <h4 className="text-sm font-black text-white leading-none">{n.title}</h4>
