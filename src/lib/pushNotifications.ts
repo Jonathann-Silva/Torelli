@@ -22,7 +22,8 @@ export async function requestAndSaveNotificationPermission(db: Firestore, userId
     throw new Error('Este navegador não suporta Service Workers.');
   }
 
-  // No iOS, o pedido de permissão deve ser a PRIMEIRA coisa após o clique
+  // IMPORTANTE PARA iOS: O pedido de permissão DEVE ser disparado diretamente pelo clique.
+  // Não deve haver nenhum await ANTES deste comando.
   const permission = await Notification.requestPermission();
   
   if (permission !== 'granted') {
@@ -31,7 +32,9 @@ export async function requestAndSaveNotificationPermission(db: Firestore, userId
 
   try {
     // Registra o sw.js (deve estar na raiz da pasta public)
-    const registration = await navigator.serviceWorker.register('/sw.js');
+    const registration = await navigator.serviceWorker.register('/sw.js', {
+      scope: '/'
+    });
     
     // Aguarda o SW estar ativo
     await navigator.serviceWorker.ready;
@@ -39,7 +42,7 @@ export async function requestAndSaveNotificationPermission(db: Firestore, userId
     const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY || '';
     
     if (!publicVapidKey) {
-      throw new Error('Chave VAPID pública não configurada no ambiente.');
+      throw new Error('Chave VAPID pública não configurada.');
     }
 
     const subscribeOptions = {
@@ -62,7 +65,7 @@ export async function requestAndSaveNotificationPermission(db: Firestore, userId
       return subscription;
     }
   } catch (err: any) {
-    console.error('Erro no fluxo de Push:', err);
+    console.error('Erro no registro do Push:', err);
     throw err;
   }
 

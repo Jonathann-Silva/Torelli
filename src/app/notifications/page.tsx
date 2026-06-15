@@ -11,7 +11,8 @@ import {
   Info,
   Loader2,
   Share,
-  PlusSquare
+  PlusSquare,
+  Settings
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCollection, useFirestore, useUser } from '@/firebase';
@@ -45,6 +46,12 @@ export default function NotificationsPage() {
   const handleEnableNotifications = async () => {
     if (!db || !user) return;
     
+    // Se já estiver negado, não adianta tentar pedir novamente, o navegador bloqueia o prompt.
+    if (Notification.permission === 'denied') {
+      setErrorMessage('Permissão bloqueada no sistema. Siga as instruções abaixo para liberar.');
+      return;
+    }
+
     setIsRegistering(true);
     setErrorMessage(null);
     try {
@@ -119,7 +126,7 @@ export default function NotificationsPage() {
         <section className="space-y-4">
           {renderIosTip()}
 
-          {(permissionStatus === 'default' || (isStandalone && permissionStatus === 'default')) && (
+          {permissionStatus === 'default' && (
             <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-3xl p-6 relative overflow-hidden shadow-lg">
               <div className="flex gap-4 items-start">
                 <div className="w-12 h-12 shrink-0 rounded-2xl bg-primary/20 flex items-center justify-center text-primary amber-glow">
@@ -165,15 +172,27 @@ export default function NotificationsPage() {
           )}
 
           {permissionStatus === 'denied' && (
-            <div className="bg-destructive/5 border border-destructive/10 rounded-3xl p-5 flex gap-4 items-center">
-              <div className="w-10 h-10 rounded-xl bg-destructive/10 border border-destructive/20 flex items-center justify-center text-destructive">
-                <Info size={20} />
+            <div className="bg-destructive/5 border border-destructive/10 rounded-3xl p-6 space-y-4">
+              <div className="flex gap-4 items-center">
+                <div className="w-12 h-12 rounded-xl bg-destructive/10 border border-destructive/20 flex items-center justify-center text-destructive shrink-0">
+                  <Settings size={24} />
+                </div>
+                <div className="flex-grow space-y-1">
+                  <h3 className="text-sm font-black text-white uppercase tracking-wider">Acesso Negado</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Você bloqueou as notificações anteriormente.
+                  </p>
+                </div>
               </div>
-              <div className="flex-grow space-y-1">
-                <h3 className="text-xs font-black text-white uppercase tracking-wider">Notificações Bloqueadas</h3>
-                <p className="text-[10px] text-muted-foreground leading-relaxed">
-                  A permissão foi negada. Para ativá-las, limpe as configurações do site no seu navegador ou acesse: Ajustes {' > '} Safari {' > '} Notificações (se instalado).
-                </p>
+              
+              <div className="bg-background/40 p-4 rounded-2xl space-y-3">
+                <p className="text-[10px] font-bold text-foreground uppercase tracking-wider">Como liberar:</p>
+                <ol className="text-[11px] text-muted-foreground space-y-2 list-decimal list-inside">
+                  <li>Remova o app da tela de início.</li>
+                  <li>No Safari, vá em <strong>Ajustes {' > '} Safari {' > '} Avançado {' > '} Dados dos Sites</strong>.</li>
+                  <li>Pesquise pelo seu domínio e clique em <strong>Editar {' > '} Apagar</strong>.</li>
+                  <li>Instale o app novamente na tela de início.</li>
+                </ol>
               </div>
             </div>
           )}
