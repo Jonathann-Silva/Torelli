@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -52,8 +51,8 @@ export default function NotificationsPage() {
       await requestAndSaveNotificationPermission(db, user.uid);
       setPermissionStatus(Notification.permission);
     } catch (error: any) {
-      console.error(error);
-      setErrorMessage(error.message || 'Erro ao ativar notificações.');
+      console.error('Falha ao ativar notificações:', error);
+      setErrorMessage(error.message || 'Erro ao ativar notificações. Tente novamente.');
       if (typeof window !== 'undefined' && 'Notification' in window) {
         setPermissionStatus(Notification.permission);
       }
@@ -80,7 +79,6 @@ export default function NotificationsPage() {
     updateDoc(notificationRef, { read: true });
   };
 
-  // Renderiza dica para iOS se não estiver em modo standalone
   const renderIosTip = () => {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     if (isIOS && !isStandalone) {
@@ -121,7 +119,6 @@ export default function NotificationsPage() {
           <p className="text-sm font-medium text-muted-foreground">Fique por dentro das atualizações dos seus agendamentos.</p>
         </section>
 
-        {/* Push Notifications Configuration Panel */}
         <section className="space-y-4">
           {renderIosTip()}
 
@@ -199,7 +196,6 @@ export default function NotificationsPage() {
           )}
         </section>
 
-        {/* Notifications List */}
         <section className="space-y-3">
           <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2">Mensagens Recebidas</h3>
           {loading ? (
