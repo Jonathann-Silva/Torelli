@@ -2,9 +2,10 @@
 "use client"
 
 import React, { useState, useMemo } from 'react';
+import Link from 'next/link';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
-import { Settings, Clock, Calendar, Loader2, Sparkles, Save, LogOut } from 'lucide-react';
+import { Settings, Clock, Calendar, Loader2, Sparkles, Save, LogOut, Bell, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useFirestore, useDoc, useAuth } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
@@ -161,6 +162,25 @@ export default function AdminSettingsPage() {
               </div>
             </div>
           )}
+        </section>
+
+        {/* Notificações Push para Admin */}
+        <section className="space-y-4">
+          <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">Comunicação</h3>
+          <Link href="/notifications">
+            <button className="w-full flex items-center justify-between p-4 bg-primary/10 border border-primary/20 rounded-2xl hover:bg-primary/20 transition-all group amber-glow">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                  <Bell size={20} />
+                </div>
+                <div className="text-left">
+                  <span className="text-sm font-black text-white uppercase tracking-tight">Notificações Push</span>
+                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">Alertas de novos agendamentos</p>
+                </div>
+              </div>
+              <ChevronRight size={18} className="text-primary" />
+            </button>
+          </Link>
         </section>
 
         <section className="bg-primary/5 border border-primary/20 p-8 rounded-3xl relative overflow-hidden text-left">
