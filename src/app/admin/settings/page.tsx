@@ -8,15 +8,13 @@ import { BottomNav } from '@/components/layout/BottomNav';
 import { Settings, Clock, Calendar, Loader2, Sparkles, Save, LogOut, Bell, ChevronRight, CheckCircle2, Send, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useFirestore, useDoc, useAuth, useUser } from '@/firebase';
-import { doc, setDoc, collection, getDocs, addDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { requestAndSaveNotificationPermission } from '@/lib/pushNotifications';
-import { sendPushNotification } from '@/app/actions/send-push';
 import { 
   Dialog, 
   DialogContent, 
@@ -40,11 +38,6 @@ export default function AdminSettingsPage() {
   // States for notifications
   const [isRegisteringPush, setIsRegisteringPush] = useState(false);
   const [pushStatus, setPushStatus] = useState<'default' | 'granted' | 'denied' | 'loading'>('loading');
-  
-  // States for broadcast message
-  const [broadcastTitle, setBroadcastTitle] = useState('');
-  const [broadcastMessage, setBroadcastMessage] = useState('');
-  const [isSendingBroadcast, setIsSendingBroadcast] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
@@ -103,59 +96,6 @@ export default function AdminSettingsPage() {
     }
   };
 
-  const handleSendBroadcast = async () => {
-    if (!db || !broadcastTitle || !broadcastMessage) {
-      toast({ title: "Campos obrigatórios", description: "Preencha o título e a mensagem para enviar.", variant: "destructive" });
-      return;
-    }
-
-    setIsSendingBroadcast(true);
-    try {
-      const usersSnap = await getDocs(collection(db, 'users'));
-      let count = 0;
-
-      const promises = usersSnap.docs.map(async (userDoc) => {
-        const userData = userDoc.data();
-        const userId = userDoc.id;
-
-        // 1. Save in Firestore notifications collection for the user
-        await addDoc(collection(db, 'notifications'), {
-          title: broadcastTitle,
-          message: broadcastMessage,
-          createdAt: new Date().toISOString(),
-          read: false,
-          type: 'info',
-          recipientId: userId,
-          recipientRole: 'client'
-        });
-
-        // 2. Send Push Notification if token exists
-        if (userData.fcmToken) {
-          try {
-            await sendPushNotification(userData.fcmToken, broadcastTitle, broadcastMessage);
-          } catch (e) {
-            console.error(`Falha ao enviar push para ${userId}`, e);
-          }
-        }
-        count++;
-      });
-
-      await Promise.all(promises);
-
-      toast({ 
-        title: "Comunicado Enviado!", 
-        description: `Sua mensagem foi enviada para ${count} usuários cadastrados.` 
-      });
-      setBroadcastTitle('');
-      setBroadcastMessage('');
-    } catch (error) {
-      console.error(error);
-      toast({ title: "Erro", description: "Falha ao processar envio em massa.", variant: "destructive" });
-    } finally {
-      setIsSendingBroadcast(false);
-    }
-  };
-
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -208,47 +148,26 @@ export default function AdminSettingsPage() {
         {/* Broadcast Messaging Section */}
         <section className="space-y-4">
           <div className="flex items-center gap-2">
-            <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">Comunicado Geral</h3>
+            <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">Comunicação</h3>
             <div className="h-px flex-grow bg-white/5"></div>
           </div>
           
-          <div className="premium-card p-6 rounded-3xl space-y-4 bg-secondary/20 border-white/5">
-            <div className="space-y-2 text-left">
-              <Label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Título do Comunicado</Label>
-              <Input 
-                value={broadcastTitle}
-                onChange={(e) => setBroadcastTitle(e.target.value)}
-                placeholder="Ex: Promoção de Natal 🎄"
-                className="bg-background/50 border-white/5 rounded-xl h-12 text-sm"
-              />
-            </div>
-            
-            <div className="space-y-2 text-left">
-              <Label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Mensagem para os Clientes</Label>
-              <Textarea 
-                value={broadcastMessage}
-                onChange={(e) => setBroadcastMessage(e.target.value)}
-                placeholder="Digite aqui o aviso que todos os clientes cadastrados receberão..."
-                className="bg-background/50 border-white/5 rounded-xl min-h-[120px] text-sm resize-none"
-              />
-            </div>
-
-            <Button 
-              disabled={isSendingBroadcast || !broadcastTitle || !broadcastMessage}
-              onClick={handleSendBroadcast}
-              className="w-full bg-primary text-primary-foreground font-black uppercase tracking-widest h-14 rounded-2xl amber-glow shadow-xl active:scale-95 transition-all"
-            >
-              {isSendingBroadcast ? <Loader2 className="animate-spin" /> : (
-                <div className="flex items-center gap-2">
-                  <Send size={18} />
-                  Enviar para todos os usuários
+          <Link href="/admin/broadcast" className="block w-full">
+            <button className="w-full flex items-center justify-between p-5 bg-secondary/30 border border-white/5 rounded-2xl hover:bg-secondary/50 transition-all group">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                  <MessageSquare size={24} />
                 </div>
-              )}
-            </Button>
-            <p className="text-[9px] text-center text-muted-foreground font-medium italic">
-              * Isso enviará uma notificação no app e um Push para todos os clientes.
-            </p>
-          </div>
+                <div className="text-left">
+                  <span className="text-sm font-black text-white uppercase tracking-tight">Comunicado Geral</span>
+                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">Enviar avisos para todos os clientes</p>
+                </div>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
+                <ChevronRight size={16} />
+              </div>
+            </button>
+          </Link>
         </section>
 
         {/* Global Operational Settings */}
