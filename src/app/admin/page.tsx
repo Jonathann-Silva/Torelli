@@ -1,21 +1,23 @@
 
 "use client"
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Header } from '@/components/layout/Header';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { TrendingUp, DollarSign, Bell, CheckCircle2, Loader2, Check, X, ChevronRight } from 'lucide-react';
+import { TrendingUp, DollarSign, Bell, CheckCircle2, Loader2, Check, X, ChevronRight, BellRing } from 'lucide-react';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy, limit, doc, updateDoc, getDoc, increment, addDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { sendPushNotification } from '@/app/actions/send-push';
+import { processAppointmentReminders } from '@/app/actions/process-reminders';
 
 export default function AdminDashboard() {
   const db = useFirestore();
+  const [isProcessingReminders, setIsProcessingReminders] = useState(false);
 
   const appointmentsQuery = useMemo(() => {
     if (!db) return null;
@@ -27,6 +29,26 @@ export default function AdminDashboard() {
   }, [db]);
 
   const { data: appointments = [], loading } = useCollection(appointmentsQuery);
+
+  // Processar lembretes automaticamente ao carregar o dashboard
+  useEffect(() => {
+    if (db) {
+      const runReminders = async () => {
+        setIsProcessingReminders(true);
+        const result = await processAppointmentReminders(db);
+        if (result.success && result.count > 0) {
+          toast({
+            title: "Lembretes Enviados",
+            description: `${result.count} clientes foram notificados sobre seus horários.`,
+          });
+        }
+        setIsProcessingReminders(false);
+      };
+      
+      const timer = setTimeout(runReminders, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [db]);
 
   const handleUpdateStatus = async (appointment: any, newStatus: 'confirmed' | 'cancelled' | 'completed') => {
     if (!db) return;
@@ -98,23 +120,49 @@ export default function AdminDashboard() {
       <Header />
       
       <main className="pt-24 px-5 space-y-10 max-w-container-max mx-auto">
-        <section className="space-y-4">
+        <section className="flex items-center justify-between gap-4">
           <div className="space-y-1">
             <h2 className="text-4xl font-black text-white tracking-tighter">Visão Geral</h2>
             <p className="text-muted-foreground text-sm font-medium">Painel Administrativo da Barbearia</p>
           </div>
+          {isProcessingReminders && (
+            <div className="bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-full flex items-center gap-2">
+              <Loader2 size={12} className="animate-spin text-primary" />
+              <span className="text-[8px] font-black text-primary uppercase tracking-widest">Sincronizando Lembretes</span>
+            </div>
+          )}
         </section>
 
         <section className="grid grid-cols-1 gap-4">
-          <div className="premium-card p-8 rounded-3xl bg-secondary/30 border-white/5">
-            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Receita Total (Concluídos)</span>
-            <h3 className="text-4xl font-black text-primary mt-2">R$ {totalRevenue.toFixed(2)}</h3>
+          <div className="premium-card p-8 rounded-3xl bg-secondary/30 border-white/5 relative overflow-hidden group">
+            <div className="relative z-10">
+              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Receita Total (Concluídos)</span>
+              <h3 className="text-4xl font-black text-primary mt-2">R$ {totalRevenue.toFixed(2)}</h3>
+            </div>
+            <TrendingUp className="absolute right-6 bottom-6 text-primary/10 w-24 h-24 group-hover:scale-110 transition-transform" />
+          </div>
+        </section>
+
+        {/* Status de Lembretes Automáticos */}
+        <section className="premium-card p-5 rounded-3xl border-primary/10 bg-primary/5 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center text-primary amber-glow">
+              <BellRing size={24} />
+            </div>
+            <div>
+              <h4 className="text-sm font-black text-white uppercase tracking-tight">Lembretes Inteligentes</h4>
+              <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">Push 24h e 3h antes do serviço</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+            <span className="text-[9px] font-black text-primary uppercase tracking-widest">Ativo</span>
           </div>
         </section>
 
         <section className="space-y-6">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-2xl font-black text-white tracking-tight shrink min-w-0">Agendamentos</h2>
+            <h2 className="text-2xl font-black text-white tracking-tight shrink min-w-0">Agendamentos Recentes</h2>
             <div className="bg-primary/10 px-3 py-1 rounded-full border border-primary/20 shrink-0 flex items-center justify-center">
               <span className="text-[10px] font-black text-primary uppercase tracking-widest whitespace-nowrap">Tempo Real</span>
             </div>

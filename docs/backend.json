@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Appointment": {
@@ -13,7 +14,9 @@
         "time": { "type": "string", "description": "Time in HH:mm format" },
         "status": { "type": "string", "enum": ["pending", "confirmed", "ongoing", "cancelled", "completed"] },
         "clientImage": { "type": "string" },
-        "price": { "type": "number" }
+        "price": { "type": "number" },
+        "reminder1dSent": { "type": "boolean", "description": "Flag for 24h reminder sent" },
+        "reminder3hSent": { "type": "boolean", "description": "Flag for 3h reminder sent" }
       },
       "required": ["clientName", "serviceName", "barberName", "date", "time", "status"]
     },
