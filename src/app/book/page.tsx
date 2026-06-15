@@ -21,6 +21,7 @@ export default function BookPage() {
   const { user } = useUser();
   const db = useFirestore();
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
   
   const [selectedService, setSelectedService] = useState<any>(null);
   const [selectedBarber, setSelectedBarber] = useState<any>(null);
@@ -29,6 +30,7 @@ export default function BookPage() {
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
 
   useEffect(() => {
+    setMounted(true);
     setCurrentTime(new Date());
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -68,6 +70,8 @@ export default function BookPage() {
   const { data: bookedAppointments = [] } = useCollection(appointmentsQuery);
 
   const availableDates = useMemo(() => {
+    // Retornamos uma data fixa ou nula se não estiver montado para evitar mismatch
+    if (typeof window === 'undefined') return [];
     return Array.from({ length: 14 }).map((_, i) => addDays(new Date(), i));
   }, []);
 
@@ -181,6 +185,8 @@ export default function BookPage() {
       setLoading(false);
     }
   };
+
+  if (!mounted) return null;
 
   const getImage = (imageKey: string) => {
     if (imageKey?.startsWith('data:') || imageKey?.startsWith('http')) return imageKey;

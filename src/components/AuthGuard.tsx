@@ -47,6 +47,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     }
   }, [user, loading, pathname, router, mounted]);
 
+  // Durante a hidratação inicial, mounted é false. 
+  // O conteúdo retornado aqui deve ser IDÊNTICO ao que o servidor renderizou.
   if (!mounted || loading) {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-6">

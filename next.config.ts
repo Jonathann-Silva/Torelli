@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -42,6 +43,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Removido experimental.allowedDevOrigins que estava causando warnings/erros em builds recentes
 };
 
 export default nextConfig;

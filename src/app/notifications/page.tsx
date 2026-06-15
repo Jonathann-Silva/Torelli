@@ -170,8 +170,8 @@ export default function NotificationsPage() {
                   <h3 className="text-sm font-black text-white uppercase tracking-wider">Acesso Negado</h3>
                 </div>
               </div>
-              <p className="text-[11px] text-muted-foreground">
-                Como liberar: Ajustes {' > '} Safari {' > '} Avançado {' > '} Dados dos Sites.
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Como liberar: Ajustes {' > '} Safari {' > '} Avançado {' > '} Dados dos Sites. Limpe os dados do seu domínio para que o prompt volte a aparecer.
               </p>
             </div>
           )}
