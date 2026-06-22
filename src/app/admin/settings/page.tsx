@@ -5,7 +5,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
-import { Settings, Clock, Calendar, Loader2, Sparkles, Save, LogOut, Bell, ChevronRight, CheckCircle2, MessageSquare, PalmTree } from 'lucide-react';
+import { Settings, Clock, Calendar, Loader2, Sparkles, Save, LogOut, Bell, ChevronRight, CheckCircle2, MessageSquare, Palmtree } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useFirestore, useDoc, useAuth, useUser } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
@@ -174,7 +174,7 @@ export default function AdminSettingsPage() {
               <button className="w-full flex items-center justify-between p-5 bg-secondary/30 border border-white/5 rounded-2xl hover:bg-secondary/50 transition-all group">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                    <PalmTree size={24} />
+                    <Palmtree size={24} />
                   </div>
                   <div className="text-left">
                     <span className="text-sm font-black text-white uppercase tracking-tight">Folgas & Férias</span>

@@ -4,7 +4,7 @@
 import React, { useState, useMemo } from 'react';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
-import { PalmTree, Calendar as CalendarIcon, Loader2, Trash2, ChevronLeft, AlertCircle, Send } from 'lucide-react';
+import { Palmtree, Calendar as CalendarIcon, Loader2, Trash2, ChevronLeft, AlertCircle, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy, addDoc, deleteDoc, doc, getDocs, where, updateDoc } from 'firebase/firestore';
@@ -216,7 +216,7 @@ export default function AdminVacationsPage() {
                 <div key={d.id} className="flex items-center justify-between p-4 bg-secondary/30 border border-white/5 rounded-2xl group">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                      <PalmTree size={20} />
+                      <Palmtree size={20} />
                     </div>
                     <div>
                       <span className="text-sm font-black text-white">{d.date.split('-').reverse().join('/')}</span>
