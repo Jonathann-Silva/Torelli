@@ -72,6 +72,17 @@
         "cleaningDuration": { "type": "number", "description": "Duration for beard in minutes" },
         "comboDuration": { "type": "number", "description": "Duration for combo in minutes" }
       }
+    },
+    "DeactivatedDay": {
+      "title": "Deactivated Day",
+      "description": "A day when the shop is closed (vacation, break, etc.)",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string", "description": "ISO format date YYYY-MM-DD" },
+        "reason": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["date"]
     }
   },
   "auth": {
@@ -97,6 +108,10 @@
     "/settings/{settingId}": {
       "schema": "GlobalSettings",
       "description": "Global configuration document."
+    },
+    "/deactivatedDays/{dayId}": {
+      "schema": "DeactivatedDay",
+      "description": "Collection of closed dates."
     }
   }
 }

@@ -5,7 +5,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
-import { Settings, Clock, Calendar, Loader2, Sparkles, Save, LogOut, Bell, ChevronRight, CheckCircle2, Send, MessageSquare } from 'lucide-react';
+import { Settings, Clock, Calendar, Loader2, Sparkles, Save, LogOut, Bell, ChevronRight, CheckCircle2, MessageSquare, PalmTree } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useFirestore, useDoc, useAuth, useUser } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
@@ -116,7 +116,7 @@ export default function AdminSettingsPage() {
             <div className="h-[1px] w-8 bg-primary"></div>
             <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Gestão Torelli</span>
           </div>
-          <h2 className="text-4xl font-black text-white tracking-tighter">Ajustes & Mensagens</h2>
+          <h2 className="text-4xl font-black text-white tracking-tighter">Ajustes & Operação</h2>
           <p className="text-sm font-medium text-muted-foreground">Controle operacional e comunicação direta.</p>
         </header>
 
@@ -148,26 +148,45 @@ export default function AdminSettingsPage() {
         {/* Broadcast Messaging Section */}
         <section className="space-y-4">
           <div className="flex items-center gap-2">
-            <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">Comunicação</h3>
+            <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">Ferramentas de Gestão</h3>
             <div className="h-px flex-grow bg-white/5"></div>
           </div>
           
-          <Link href="/admin/broadcast" className="block w-full">
-            <button className="w-full flex items-center justify-between p-5 bg-secondary/30 border border-white/5 rounded-2xl hover:bg-secondary/50 transition-all group">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                  <MessageSquare size={24} />
+          <div className="grid grid-cols-1 gap-4">
+            <Link href="/admin/broadcast" className="block w-full">
+              <button className="w-full flex items-center justify-between p-5 bg-secondary/30 border border-white/5 rounded-2xl hover:bg-secondary/50 transition-all group">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                    <MessageSquare size={24} />
+                  </div>
+                  <div className="text-left">
+                    <span className="text-sm font-black text-white uppercase tracking-tight">Comunicado Geral</span>
+                    <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">Enviar avisos para todos os clientes</p>
+                  </div>
                 </div>
-                <div className="text-left">
-                  <span className="text-sm font-black text-white uppercase tracking-tight">Comunicado Geral</span>
-                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">Enviar avisos para todos os clientes</p>
+                <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
+                  <ChevronRight size={16} />
                 </div>
-              </div>
-              <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
-                <ChevronRight size={16} />
-              </div>
-            </button>
-          </Link>
+              </button>
+            </Link>
+
+            <Link href="/admin/vacations" className="block w-full">
+              <button className="w-full flex items-center justify-between p-5 bg-secondary/30 border border-white/5 rounded-2xl hover:bg-secondary/50 transition-all group">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                    <PalmTree size={24} />
+                  </div>
+                  <div className="text-left">
+                    <span className="text-sm font-black text-white uppercase tracking-tight">Folgas & Férias</span>
+                    <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">Desativar datas no calendário</p>
+                  </div>
+                </div>
+                <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
+                  <ChevronRight size={16} />
+                </div>
+              </button>
+            </Link>
+          </div>
         </section>
 
         {/* Global Operational Settings */}

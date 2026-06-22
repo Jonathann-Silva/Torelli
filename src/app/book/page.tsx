@@ -50,6 +50,9 @@ export default function BookPage() {
   const barbersQuery = useMemo(() => db ? query(collection(db, 'barbers'), orderBy('name')) : null, [db]);
   const { data: barbers = [], loading: barbersLoading } = useCollection(barbersQuery);
 
+  const deactivatedQuery = useMemo(() => db ? query(collection(db, 'deactivatedDays')) : null, [db]);
+  const { data: deactivatedDays = [] } = useCollection(deactivatedQuery);
+
   useEffect(() => {
     if (!barbersLoading && barbers.length > 0) {
       const activeBarbers = barbers.filter((b: any) => b.status === 'active');
@@ -80,15 +83,18 @@ export default function BookPage() {
     if (!mounted) return [];
     const dates: Date[] = [];
     let current = new Date();
-    while (dates.length < 14) {
+    while (dates.length < 21) {
       const dayOfWeek = getDay(current);
-      if (dayOfWeek !== 0 && !isHoliday(current)) {
+      const currentStr = format(current, 'yyyy-MM-dd');
+      const isDeactivated = deactivatedDays.some((d: any) => d.date === currentStr);
+      
+      if (dayOfWeek !== 0 && !isHoliday(current) && !isDeactivated) {
         dates.push(new Date(current));
       }
       current = addDays(current, 1);
     }
     return dates;
-  }, [mounted]);
+  }, [mounted, deactivatedDays]);
 
   const timeSlots = useMemo(() => {
     if (!selectedBarber || !settings || !currentTime || !selectedDate) return [];
