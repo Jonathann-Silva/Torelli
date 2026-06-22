@@ -188,6 +188,7 @@ export default function AdminVacationsPage() {
                       initialFocus
                       className="bg-card text-foreground"
                       locale={ptBR}
+                      disabled={{ dayOfWeek: [0] }}
                     />
                   </PopoverContent>
                 </Popover>
