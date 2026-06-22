@@ -4,12 +4,12 @@
 import React, { useState, useMemo } from 'react';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
-import { Palmtree, Calendar as CalendarIcon, Loader2, Trash2, ChevronLeft } from 'lucide-react';
+import { Palmtree, Calendar as CalendarIcon, Loader2, Trash2, ChevronLeft, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy, addDoc, deleteDoc, doc, getDocs, where, updateDoc } from 'firebase/firestore';
-import { format } from 'date-fns';
+import { format, parse } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -31,10 +31,10 @@ export default function AdminVacationsPage() {
   const db = useFirestore();
   const router = useRouter();
   
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [selectedDates, setSelectedDates] = useState<Date[] | undefined>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showConfirmCancel, setShowConfirmCancel] = useState(false);
-  const [pendingDeactivation, setPendingDeactivation] = useState<Date | null>(null);
+  const [pendingDates, setPendingDates] = useState<Date[]>([]);
   const [conflictingApts, setConflictingApts] = useState<any[]>([]);
 
   const vacationsQuery = useMemo(() => {
@@ -44,31 +44,44 @@ export default function AdminVacationsPage() {
 
   const { data: deactivatedDays = [], loading } = useCollection(vacationsQuery);
 
-  const checkConflictsAndAdd = async (date: Date) => {
-    if (!db) return;
-    const dateStr = format(date, 'yyyy-MM-dd');
-    
-    if (deactivatedDays.some((d: any) => d.date === dateStr)) {
-      toast({ title: "Data já desativada", description: "Este dia já consta como fechado." });
-      return;
-    }
+  const checkConflictsAndAddBatch = async () => {
+    if (!db || !selectedDates || selectedDates.length === 0) return;
 
     setIsProcessing(true);
     try {
-      const q = query(
-        collection(db, 'appointments'), 
-        where('date', '==', dateStr), 
-        where('status', 'in', ['pending', 'confirmed'])
-      );
-      const snap = await getDocs(q);
-      const conflicts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const allConflicts: any[] = [];
+      const datesToProcess: Date[] = [];
 
-      if (conflicts.length > 0) {
-        setConflictingApts(conflicts);
-        setPendingDeactivation(date);
+      for (const date of selectedDates) {
+        const dateStr = format(date, 'yyyy-MM-dd');
+        
+        // Ignora se já estiver desativado
+        if (deactivatedDays.some((d: any) => d.date === dateStr)) continue;
+
+        datesToProcess.push(date);
+
+        const q = query(
+          collection(db, 'appointments'), 
+          where('date', '==', dateStr), 
+          where('status', 'in', ['pending', 'confirmed'])
+        );
+        const snap = await getDocs(q);
+        const conflicts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        allConflicts.push(...conflicts);
+      }
+
+      if (datesToProcess.length === 0) {
+        toast({ title: "Datas já desativadas", description: "As datas selecionadas já constam como fechadas." });
+        setIsProcessing(false);
+        return;
+      }
+
+      if (allConflicts.length > 0) {
+        setConflictingApts(allConflicts);
+        setPendingDates(datesToProcess);
         setShowConfirmCancel(true);
       } else {
-        await finalizeDeactivation(date);
+        await finalizeDeactivationBatch(datesToProcess);
       }
     } catch (error) {
       console.error(error);
@@ -78,20 +91,26 @@ export default function AdminVacationsPage() {
     }
   };
 
-  const finalizeDeactivation = async (date: Date, notifyAll = false) => {
+  const finalizeDeactivationBatch = async (dates: Date[], notifyAll = false) => {
     if (!db) return;
-    const dateStr = format(date, 'yyyy-MM-dd');
-    const displayDate = format(date, "dd 'de' MMMM", { locale: ptBR });
 
     try {
-      await addDoc(collection(db, 'deactivatedDays'), {
-        date: dateStr,
-        createdAt: new Date().toISOString()
+      const batchPromises = dates.map(async (date) => {
+        const dateStr = format(date, 'yyyy-MM-dd');
+        return addDoc(collection(db, 'deactivatedDays'), {
+          date: dateStr,
+          createdAt: new Date().toISOString()
+        });
       });
+
+      await Promise.all(batchPromises);
 
       if (conflictingApts.length > 0) {
         for (const apt of conflictingApts) {
           await updateDoc(doc(db, 'appointments', apt.id), { status: 'cancelled' });
+          
+          const aptDate = parse(apt.date, 'yyyy-MM-dd', new Date());
+          const displayDate = format(aptDate, "dd 'de' MMMM", { locale: ptBR });
           
           const title = "Agendamento Cancelado";
           const message = `A barbearia estará fechada em ${displayDate}. Seu agendamento foi cancelado automaticamente.`;
@@ -111,8 +130,9 @@ export default function AdminVacationsPage() {
 
       if (notifyAll) {
         const usersSnap = await getDocs(collection(db, 'users'));
+        const datesStr = dates.map(d => format(d, 'dd/MM')).join(', ');
         const title = "Aviso de Fechamento";
-        const message = `Informamos que não haverá expediente no dia ${displayDate}. Confira outras datas disponíveis no app!`;
+        const message = `Informamos que não haverá expediente nas seguintes datas: ${datesStr}. Confira outras datas disponíveis no app!`;
         
         const notificationPromises = usersSnap.docs.map(async (u) => {
           const userData = u.data();
@@ -126,13 +146,17 @@ export default function AdminVacationsPage() {
         await Promise.all(notificationPromises);
       }
 
-      toast({ title: "Dia Desativado!", description: `Calendário bloqueado para ${displayDate}.` });
+      toast({ 
+        title: "Datas Desativadas!", 
+        description: `${dates.length} data(s) bloqueada(s) no calendário.` 
+      });
       setShowConfirmCancel(false);
       setConflictingApts([]);
-      setPendingDeactivation(null);
+      setPendingDates([]);
+      setSelectedDates([]);
     } catch (error) {
       console.error(error);
-      toast({ title: "Erro", description: "Não foi possível desativar o dia.", variant: "destructive" });
+      toast({ title: "Erro", description: "Não foi possível desativar as datas.", variant: "destructive" });
     }
   };
 
@@ -162,29 +186,33 @@ export default function AdminVacationsPage() {
           
           <div className="space-y-1">
             <h2 className="text-4xl font-black text-white tracking-tighter">Folgas & Férias</h2>
-            <p className="text-sm font-medium text-muted-foreground">Bloqueie datas específicas para evitar novos agendamentos.</p>
+            <p className="text-sm font-medium text-muted-foreground">Selecione múltiplos dias para desativar no calendário.</p>
           </div>
         </header>
 
         <section className="space-y-6">
           <div className="premium-card p-6 rounded-3xl space-y-6 bg-secondary/20 border-white/5">
             <div className="space-y-4">
-              <Label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">Selecione a Data</Label>
+              <Label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] ml-1">Selecione as Datas</Label>
               <div className="flex gap-2">
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="secondary" className="h-14 flex-1 rounded-xl bg-background/50 border border-white/5 flex items-center justify-between gap-2 font-bold text-sm">
                       <div className="flex items-center gap-2">
                         <CalendarIcon size={18} className="text-primary" />
-                        {selectedDate ? format(selectedDate, 'dd/MM/yyyy') : 'Escolher data'}
+                        {selectedDates && selectedDates.length > 0 
+                          ? (selectedDates.length === 1 
+                              ? format(selectedDates[0], 'dd/MM/yyyy') 
+                              : `${selectedDates.length} datas selecionadas`) 
+                          : 'Escolher datas'}
                       </div>
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 bg-card border-white/5" align="start">
                     <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={setSelectedDate}
+                      mode="multiple"
+                      selected={selectedDates}
+                      onSelect={setSelectedDates}
                       initialFocus
                       className="bg-card text-foreground"
                       locale={ptBR}
@@ -194,15 +222,15 @@ export default function AdminVacationsPage() {
                 </Popover>
                 
                 <Button 
-                  disabled={!selectedDate || isProcessing}
-                  onClick={() => selectedDate && checkConflictsAndAdd(selectedDate)}
+                  disabled={!selectedDates || selectedDates.length === 0 || isProcessing}
+                  onClick={checkConflictsAndAddBatch}
                   className="w-14 h-14 bg-primary text-primary-foreground rounded-xl amber-glow shrink-0"
                 >
-                  {isProcessing ? <Loader2 className="animate-spin" size={20} /> : <CalendarIcon size={20} />}
+                  {isProcessing ? <Loader2 className="animate-spin" size={20} /> : <Check size={20} />}
                 </Button>
               </div>
               <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest text-center">
-                * Clientes não poderão agendar horários nesta data.
+                * Você pode selecionar vários dias clicando no calendário.
               </p>
             </div>
           </div>
@@ -250,27 +278,27 @@ export default function AdminVacationsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle className="text-xl font-black text-primary uppercase">Conflitos Encontrados!</AlertDialogTitle>
             <AlertDialogDescription className="text-sm font-medium text-muted-foreground">
-              Existem {conflictingApts.length} agendamentos para este dia. Se você desativar a data, esses agendamentos serão <span className="text-destructive font-black">CANCELADOS</span> e os clientes notificados via Push.
+              Existem {conflictingApts.length} agendamento(s) nas datas selecionadas. Ao desativar, eles serão <span className="text-destructive font-black">CANCELADOS</span> e os clientes notificados via Push.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="max-h-[200px] overflow-y-auto space-y-2 p-2 bg-black/20 rounded-xl border border-white/5">
             {conflictingApts.map((apt, i) => (
-              <div key={i} className="text-[10px] font-bold text-white uppercase flex justify-between">
-                <span>{apt.clientName}</span>
-                <span className="text-primary">{apt.time}</span>
+              <div key={i} className="text-[10px] font-bold text-white uppercase flex justify-between gap-4">
+                <span className="truncate">{apt.clientName}</span>
+                <span className="text-primary shrink-0">{apt.date.split('-').reverse().slice(0, 2).join('/')} {apt.time}</span>
               </div>
             ))}
           </div>
           <AlertDialogFooter className="flex-col sm:flex-col gap-2">
             <Button 
-              onClick={() => pendingDeactivation && finalizeDeactivation(pendingDeactivation, true)}
+              onClick={() => finalizeDeactivationBatch(pendingDates, true)}
               className="w-full bg-primary text-primary-foreground font-black uppercase tracking-widest h-12 rounded-xl"
             >
               Confirmar & Notificar Todos
             </Button>
             <Button 
               variant="outline"
-              onClick={() => pendingDeactivation && finalizeDeactivation(pendingDeactivation, false)}
+              onClick={() => finalizeDeactivationBatch(pendingDates, false)}
               className="w-full border-white/10 text-white font-black uppercase tracking-widest h-12 rounded-xl"
             >
               Apenas Cancelar Conflitos
