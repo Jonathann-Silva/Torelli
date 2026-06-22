@@ -4,11 +4,12 @@
 import React, { useState, useMemo } from 'react';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
-import { Palmtree, Calendar as CalendarIcon, Loader2, Trash2, ChevronLeft, AlertCircle, Send } from 'lucide-react';
+import { Palmtree, Calendar as CalendarIcon, Loader2, Trash2, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy, addDoc, deleteDoc, doc, getDocs, where, updateDoc } from 'firebase/firestore';
-import { format, isSameDay } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -31,11 +32,10 @@ export default function AdminVacationsPage() {
   const router = useRouter();
   
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [isAdding, setIsAdding] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [showConfirmCancel, setShowConfirmCancel] = useState(false);
   const [pendingDeactivation, setPendingDeactivation] = useState<Date | null>(null);
   const [conflictingApts, setConflictingApts] = useState<any[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
 
   const vacationsQuery = useMemo(() => {
     if (!db) return null;
@@ -48,7 +48,6 @@ export default function AdminVacationsPage() {
     if (!db) return;
     const dateStr = format(date, 'yyyy-MM-dd');
     
-    // Check if already deactivated
     if (deactivatedDays.some((d: any) => d.date === dateStr)) {
       toast({ title: "Data já desativada", description: "Este dia já consta como fechado." });
       return;
@@ -56,7 +55,11 @@ export default function AdminVacationsPage() {
 
     setIsProcessing(true);
     try {
-      const q = query(collection(db, 'appointments'), where('date', '==', dateStr), where('status', 'in', ['pending', 'confirmed']));
+      const q = query(
+        collection(db, 'appointments'), 
+        where('date', '==', dateStr), 
+        where('status', 'in', ['pending', 'confirmed'])
+      );
       const snap = await getDocs(q);
       const conflicts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
@@ -81,13 +84,11 @@ export default function AdminVacationsPage() {
     const displayDate = format(date, "dd 'de' MMMM", { locale: ptBR });
 
     try {
-      // 1. Desativar o dia
       await addDoc(collection(db, 'deactivatedDays'), {
         date: dateStr,
         createdAt: new Date().toISOString()
       });
 
-      // 2. Se houver conflitos, cancelar e notificar
       if (conflictingApts.length > 0) {
         for (const apt of conflictingApts) {
           await updateDoc(doc(db, 'appointments', apt.id), { status: 'cancelled' });
@@ -108,13 +109,12 @@ export default function AdminVacationsPage() {
         }
       }
 
-      // 3. Notificar todos se solicitado
       if (notifyAll) {
         const usersSnap = await getDocs(collection(db, 'users'));
         const title = "Aviso de Fechamento";
         const message = `Informamos que não haverá expediente no dia ${displayDate}. Confira outras datas disponíveis no app!`;
         
-        usersSnap.docs.map(async (u) => {
+        const notificationPromises = usersSnap.docs.map(async (u) => {
           const userData = u.data();
           await addDoc(collection(db, 'notifications'), {
             title, message, createdAt: new Date().toISOString(), read: false, type: 'info', recipientId: u.id, recipientRole: 'client'
@@ -123,6 +123,7 @@ export default function AdminVacationsPage() {
             await sendPushNotification(userData.fcmToken, title, message);
           }
         });
+        await Promise.all(notificationPromises);
       }
 
       toast({ title: "Dia Desativado!", description: `Calendário bloqueado para ${displayDate}.` });
